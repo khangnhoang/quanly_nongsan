@@ -90,6 +90,7 @@ def main_content() -> rx.Component:
                 bg="whitesmoke",
                 border="1px solid whitesmoke",
                 style={"input::placeholder": {"color": "#ccc"}},
+                color="black"
             ),
             width="100%",
         ),
