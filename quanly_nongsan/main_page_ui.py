@@ -13,9 +13,9 @@ def product_type_item(item: rx.Var[dict]) -> rx.Component:
         rx.vstack(
             rx.image(
                 src=item["image_url"],  # Lấy URL ảnh từ state
-                width="80%",
-                height="auto",
-                max_height="126px",
+                width="70%",
+                height="50%",
+                max_height="152px",
                 aspect_ratio="1 / 1",  # Giúp ảnh vuông vắn hơn
             ),
             rx.text(item["name"]),  # Lấy tên loại sản phẩm từ state
@@ -45,9 +45,11 @@ def header() -> rx.Component:
                 rx.center(
                     rx.input(placeholder="Tìm kiếm", width="100%", height="40px"),
                     rx.button(rx.icon(tag="search"), height="40px"),
-                    width="70%",
+                    width="60%",
+                    align_items="center",
                 ),
-                width="60%",
+                width="100%",
+                align_items="center",
             ),
             rx.hstack(
                 rx.link(
@@ -69,12 +71,15 @@ def header() -> rx.Component:
                     href="/login_page",  # Link tới trang đăng nhập
                 ),
             ),
+            align_items = "center",
+            width="100%",
         ),
         height="100px",
         width="100%",
         bg="#0069D1",
         padding_x="2%",  # Dùng padding_x cho gọn
         align_items="center",
+        justify="between",
     )
 
 
