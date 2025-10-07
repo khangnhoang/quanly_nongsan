@@ -179,6 +179,157 @@ def content() -> rx.Component:
     )
 
 
+def footer():
+    return rx.vstack(
+        rx.box(
+            border="1px solid #eee",
+            width="100%",
+        ),
+        rx.vstack(
+            rx.vstack(
+                rx.text(
+                    "Danh mục",
+                    size="3",
+                    color="#737675",
+                    font_weight="bold",
+                ),
+                rx.hstack(
+                    rx.vstack(
+                        rx.link(
+                            rx.text("RAU CỦ SẠCH", size="2", color="#737675"),
+                        ),
+                        rx.link(
+                            rx.text("BÚN, MIẾN", size="2", color="#737675"),
+                        ),
+                        width="100%",
+                        spacing="0",
+                        font_weight="bold",
+                    ),
+                    rx.vstack(
+                        rx.link(
+                            rx.text("CÁC LOẠI ĐẶC SẢN KHÔ", size="2", color="#737675"),
+                        ),
+                        rx.link(
+                            rx.text("GẠO CÁC LOẠI", size="2", color="#737675"),
+                        ),
+                        width="100%",
+                        spacing="0",
+                        font_weight="bold",
+                    ),
+                    rx.vstack(
+                        rx.link(
+                            rx.text("NÔNG SẢN SẠCH", size="2", color="#737675"),
+                        ),
+                        rx.link(
+                            rx.text("THỰC PHẨM ĐÃ CHẾ BIẾN", size="2", color="#737675"),
+                        ),
+                        width="100%",
+                        spacing="0",
+                        font_weight="bold",
+                    ),
+                    rx.vstack(
+                        rx.link(
+                            rx.text(
+                                "ĐẶC SẢN TỔNG HỢP - NÔNG SẢN SẠCH",
+                                size="2",
+                                color="#737675",
+                                font_weight="bold",
+                            ),
+                        ),
+                        width="100%",
+                    ),
+                    width="100%",
+                ),
+                width="70%",
+            ),
+            rx.vstack(
+                rx.hstack(
+                    rx.unordered_list(
+                        rx.list_item("Quy chế hoạt động", font_size="14px"),
+                        rx.list_item("Chính sách chung", font_size="14px"),
+                        rx.list_item("Hỗ trợ khách hàng", font_size="14px"),
+                        rx.list_item("Hợp tác- Liên kết", font_size="14px"),
+                        rx.list_item("Phương thức thanh toán", font_size="14px"),
+                        rx.list_item("Thông báo chung", font_size="14px"),
+                        width="100%",
+                    ),
+                    rx.unordered_list(
+                        rx.list_item("Các câu hỏi thường gặp", font_size="14px"),
+                        rx.list_item(
+                            "Chương trình tiếp thị liên kết", font_size="14px"
+                        ),
+                        rx.list_item("Liên hệ truyền thông", font_size="14px"),
+                        rx.list_item("Hướng dẫn trả góp", font_size="14px"),
+                        rx.list_item(rx.link("Thanh toán"), font_size="14px"),
+                        rx.list_item("Đơn vị vận chuyển", font_size="14px"),
+                        width="100%",
+                    ),
+                    rx.vstack(
+                        rx.heading(
+                            "CÔNG TY THẾ GIỚI NÔNG SẢN 3 NHÂN TÀI",
+                            size="3",
+                            font_size="16px",
+                        ),
+                        rx.unordered_list(
+                            rx.list_item(
+                                "Trụ sở chính: TÒa ĐẠi xỨ QuÁN Mĩ", font_size="14px"
+                            ),
+                            rx.list_item(
+                                "Cửa Hàng 1: Tổ 11 A - Phướng Sông Cầu - Thành Phố Bắc Kạn",
+                                font_size="14px",
+                            ),
+                            rx.list_item(
+                                "Cửa Hàng 2: VinHome Tây Mỗ - Hà Nội", font_size="14px"
+                            ),
+                            rx.list_item("Giấy ĐKKD số: 4700290799", font_size="14px"),
+                            rx.list_item(
+                                "Email CSKH: tgnsgroup.com@gmail.com", font_size="14px"
+                            ),
+                            rx.list_item(
+                                "Hotline CSKH: 097.3636.888 (Miễn phí, 8-21h kể cả T7, CN)",
+                                font_size="14px",
+                            ),
+                            rx.hstack(
+                                rx.text(
+                                    "Web đang chạy thử nghiệm các chức năng chưa đi vào hoạt động, chờ xin giấy phép của bộ công thương.",
+                                    font_size="13px",
+                                    font_weight="bold",
+                                ),
+                                rx.link(rx.icon(tag="facebook")),
+                                rx.link(rx.icon(tag="instagram")),
+                                rx.link(rx.icon(tag="youtube")),
+                                width="100%",
+                            ),
+                            width="100%",
+                        ),
+                        width="100%",
+                    ),
+                    width="100%",
+                    color="black",
+                ),
+                width="100%",
+            ),
+        ),
+        margin_top="64px",
+        padding_x="3%",
+        width="100%",
+    )
+
+
+def footer_end():
+    return (
+        rx.box(
+            rx.text("Copyright 2025 © TheGioiNongSan.Com", font_size="14px"),
+            as_="footer",
+            text_align="center",
+            padding="16px",
+            background_color="#0069D1",
+            color="white",
+            width="100%",
+        ),
+    )
+
+
 def index() -> rx.Component:
     """Hàm dựng giao diện chính của trang chủ."""
     return rx.vstack(
@@ -196,6 +347,8 @@ def index() -> rx.Component:
             height="100%",
         ),
         content(),
+        footer(),
+        footer_end(),
         bg="#F5F5F5",
         gap="0",
         on_mount=MainPageState.load_product_types,
