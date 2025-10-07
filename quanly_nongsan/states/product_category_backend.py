@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 import datetime
 import asyncio
+from decimal import Decimal, InvalidOperation 
 
 load_dotenv()
 CONNECTION_STRING = os.getenv("DATABASE_URL")
@@ -21,6 +22,7 @@ class State(rx.State):
     new_notes: str = ""
     new_image_url: str = ""
     uploaded_image_preview: str = ""
+    new_price: Decimal = Decimal("0.0") 
 
     # --- Biến cho form "Sửa" ---
     selected_product: dict | None = None
@@ -30,6 +32,7 @@ class State(rx.State):
     edited_expiry_date: str = ""
     edited_notes: str = ""
     edited_image_url: str = ""
+    edited_price: Decimal = Decimal("0.0")
 
     search_query: str = ""
 
@@ -72,7 +75,7 @@ class State(rx.State):
         self.products = []
         sql = """
             SELECT p.ID, p.ProductCode, p.Name, p.ProductType, p.ExpiryDate, p.Notes,
-                   p.PrimaryImageID, i.ImageURL AS PrimaryImageURL
+                   p.PrimaryImageID, p.Price, i.ImageURL AS PrimaryImageURL
             FROM Products AS p
             LEFT JOIN Images AS i ON p.PrimaryImageID = i.STT
             ORDER BY p.ID DESC
@@ -98,6 +101,7 @@ class State(rx.State):
                             "primary_image_url": row.PrimaryImageURL or "",
                             "primary_image_id": row.PrimaryImageID,
                             "notes": row.Notes or "",
+                            "price": row.Price or ""
                         }
                     )
         except Exception as e:
@@ -136,6 +140,7 @@ class State(rx.State):
             self.edited_expiry_date = product.get("expirydate", "")
             self.edited_notes = product.get("notes", "")
             self.edited_primary_image_url = product.get("primary_image_url")
+            self.edited_price = product.get("price", "")            
         else:
             # Nếu bỏ check, và sản phẩm đang được bỏ check chính là sản phẩm đang được chọn
             if self.selected_product and self.selected_product["id"] == product["id"]:
@@ -150,6 +155,7 @@ class State(rx.State):
         self.edited_expiry_date = ""
         self.edited_notes = ""
         self.edited_primary_image_url = ""
+        self.edited_price = ""
 
     def change_delete_dialog_state(self, show: bool):
         self.show_delete_confirm_dialog = show
@@ -174,7 +180,7 @@ class State(rx.State):
         self.products = []
         sql = """
             SELECT p.ID, p.ProductCode, p.Name, p.ProductType, p.ExpiryDate, p.Notes,
-                   p.PrimaryImageID, i.ImageURL AS PrimaryImageURL
+                   p.PrimaryImageID, p.Price, i.ImageURL AS PrimaryImageURL
             FROM Products AS p
             LEFT JOIN Images AS i ON p.PrimaryImageID = i.STT
             WHERE p.ProductCode LIKE ? OR p.Name LIKE ?
@@ -201,6 +207,7 @@ class State(rx.State):
                             "primary_image_url": row.PrimaryImageURL or "",
                             "primary_image_id": row.PrimaryImageID,
                             "notes": row.Notes or "",
+                            "price": row.Price or ""
                         }
                     )
         except Exception as e:
@@ -268,8 +275,8 @@ class State(rx.State):
 
                 cursor.execute(
                     """
-                INSERT INTO Products (ProductCode, Name, ProductType, ExpiryDate, Notes, ProductTypeID, PrimaryImageID)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO Products (ProductCode, Name, ProductType, ExpiryDate, Notes, ProductTypeID, PrimaryImageID, Price)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                     self.new_product_code.strip() or None,
                     self.new_product_name.strip(),
@@ -278,6 +285,7 @@ class State(rx.State):
                     self.new_notes.strip() or None,
                     product_type_id,
                     new_image_id,
+                    self.new_price.strip() or None
                 )
                 conn.commit()
 
@@ -288,7 +296,9 @@ class State(rx.State):
                 self.new_notes = ""
                 self.new_image_url = ""
                 self.selected_type_code = ""
-                self.uploaded_image_preview = "" # Thêm dòng này để xóa preview
+                self.uploaded_image_preview = ""
+                self.new_price = ""
+                 # Thêm dòng này để xóa preview
                 self.load_products()
                 self.load_all_images()
                 rx.window_alert("thêm thành công")
@@ -315,6 +325,15 @@ class State(rx.State):
     def set_new_image_url(self, url: str):
         self.new_image_url = url
 
+    def set_new_price(self, price: str):
+        try:
+            # Nếu value là chuỗi rỗng "" hoặc không hợp lệ, nó sẽ gây lỗi
+            # và nhảy xuống khối except.
+            self.new_price = Decimal(price)
+        except (InvalidOperation, TypeError):
+            # Xử lý trường hợp người dùng xóa hết số trong input
+            self.new_price = Decimal("0.0")
+
     def set_edited_type_code(self, code: str):
         self.edited_type_code = code
 
@@ -338,6 +357,7 @@ class State(rx.State):
 
     def set_edited_primary_image_url(self, url: str):
         self.edited_primary_image_url = url
+
 
     def search_on_enter(self, key: str):
         if key == "Enter":
