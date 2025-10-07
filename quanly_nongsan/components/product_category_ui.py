@@ -12,7 +12,9 @@ headers = [
     "Ngày Hết Hạn",
     "URL Hình Ảnh",
     "Ghi Chú",
+    "Giá"
 ]
+
 
 def edit_product_form():
     """Khu vực form để sửa và xóa sản phẩm, chỉ hiện khi có sản phẩm được chọn."""
@@ -24,6 +26,7 @@ def edit_product_form():
         "Ảnh sản phẩm",  # Thêm cột header
         "Ngày Hết Hạn",
         "Ghi Chú",
+        "Giá"
     ]
     return rx.cond(
         State.productState2.selected_product,
@@ -115,6 +118,14 @@ def edit_product_form():
                             ),
                             border="0.5px solid #C1C1C1",
                         ),
+                        #Giá
+                        rx.table.cell(
+                            rx.input(
+                                bg = "white",
+                                color = "black",
+                            ),
+                            border = "0.5px solid #C1C1C1",
+                        )
                     )
                 ),
                 width="100%",
@@ -253,6 +264,15 @@ def main_content():
                         on_change=State.productState2.set_new_notes,
                     ),
                     width="20%",
+                ),
+                rx.vstack(
+                    rx.text("Giá", size="1"),
+                    rx.input(
+                        "",
+                        bg="whitesmoke",
+                        color="black",
+                        width="100%",
+                    ),
                 ),
                 width="100%",
             ),
