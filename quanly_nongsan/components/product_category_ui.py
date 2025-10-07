@@ -12,7 +12,9 @@ headers = [
     "Ngày Hết Hạn",
     "URL Hình Ảnh",
     "Ghi Chú",
+    "Giá"
 ]
+
 
 def edit_product_form():
     """Khu vực form để sửa và xóa sản phẩm, chỉ hiện khi có sản phẩm được chọn."""
@@ -24,6 +26,7 @@ def edit_product_form():
         "Ảnh sản phẩm",  # Thêm cột header
         "Ngày Hết Hạn",
         "Ghi Chú",
+        "Giá"
     ]
     return rx.cond(
         State.productState2.selected_product,
@@ -115,6 +118,17 @@ def edit_product_form():
                             ),
                             border="0.5px solid #C1C1C1",
                         ),
+                        #Giá
+                        rx.table.cell(
+                            rx.input(
+                                value=State.productState2.get_edited_price_str, 
+                                on_change=State.productState2.set_edited_price,
+                                type="number",
+                                bg = "white",
+                                color = "black",
+                            ),
+                            border = "0.5px solid #C1C1C1",
+                        )
                     )
                 ),
                 width="100%",
@@ -254,6 +268,17 @@ def main_content():
                     ),
                     width="20%",
                 ),
+                rx.vstack(
+                    rx.text("Giá", size="1"),
+                    rx.input(           
+                        type_="number",
+                        bg="whitesmoke",
+                        color="black",
+                        width="100%",
+                        value=State.productState2.get_new_price_str, 
+                        on_change=State.productState2.set_new_price,
+                    ),
+                ),
                 width="100%",
             ),
             rx.vstack(
@@ -386,6 +411,11 @@ def main_content():
                             ),
                             rx.table.cell(
                                 product["notes"],
+                                border="0.5px solid #C1C1C1",
+                                color="black",
+                            ),
+                            rx.table.cell(
+                                product["price"],
                                 border="0.5px solid #C1C1C1",
                                 color="black",
                             ),

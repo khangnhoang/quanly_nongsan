@@ -23,6 +23,7 @@ class State(rx.State):
     new_image_url: str = ""
     uploaded_image_preview: str = ""
     new_price: Decimal = Decimal("0.0") 
+    
 
     # --- Biến cho form "Sửa" ---
     selected_product: dict | None = None
@@ -91,6 +92,14 @@ class State(rx.State):
                         if isinstance(row.ExpiryDate, datetime.date)
                         else ""
                     )
+
+                    price_value = Decimal("0.0")
+                    if row.Price is not None:
+                        try:
+                            price_value = Decimal(str(row.Price))
+                        except Exception:
+                            pass
+
                     self.products.append(
                         {
                             "id": row.ID,
@@ -101,7 +110,7 @@ class State(rx.State):
                             "primary_image_url": row.PrimaryImageURL or "",
                             "primary_image_id": row.PrimaryImageID,
                             "notes": row.Notes or "",
-                            "price": row.Price or ""
+                            "price": price_value
                         }
                     )
         except Exception as e:
@@ -140,7 +149,8 @@ class State(rx.State):
             self.edited_expiry_date = product.get("expirydate", "")
             self.edited_notes = product.get("notes", "")
             self.edited_primary_image_url = product.get("primary_image_url")
-            self.edited_price = product.get("price", "")            
+            raw_price = product.get("price", Decimal("0.0"))
+            self.edited_price = Decimal(str(raw_price))                        
         else:
             # Nếu bỏ check, và sản phẩm đang được bỏ check chính là sản phẩm đang được chọn
             if self.selected_product and self.selected_product["id"] == product["id"]:
@@ -155,7 +165,8 @@ class State(rx.State):
         self.edited_expiry_date = ""
         self.edited_notes = ""
         self.edited_primary_image_url = ""
-        self.edited_price = ""
+        self.edited_price = Decimal("0.0")
+
 
     def change_delete_dialog_state(self, show: bool):
         self.show_delete_confirm_dialog = show
@@ -197,6 +208,12 @@ class State(rx.State):
                         if isinstance(row.ExpiryDate, datetime.date)
                         else ""
                     )
+
+                    price_value = Decimal("0.0")
+                    if row.Price is not None:
+                        # Ép kiểu qua str() để đảm bảo Decimal() xử lý được int/float từ DB
+                        price_value = Decimal(str(row.Price))
+
                     self.products.append(
                         {
                             "id": row.ID,
@@ -207,11 +224,13 @@ class State(rx.State):
                             "primary_image_url": row.PrimaryImageURL or "",
                             "primary_image_id": row.PrimaryImageID,
                             "notes": row.Notes or "",
-                            "price": row.Price or ""
+                            "price": price_value 
                         }
                     )
         except Exception as e:
             print(f"Lỗi khi tìm kiếm {e}")
+
+    # Trong product_category_backend.py
 
     def update_product(self):
         if self.selected_product is None:
@@ -229,21 +248,35 @@ class State(rx.State):
                     if image_row:
                         image_stt = image_row.STT
 
+                # Lấy ProductTypeID mới
+                product_type_id = None
+                if self.edited_type_code:
+                    cursor.execute(
+                        "SELECT ID FROM ProductTypes WHERE Code = ?",
+                        self.edited_type_code,
+                    )
+                    row = cursor.fetchone()
+                    if row:
+                        product_type_id = row.ID
+
+                # SỬA LỖI: Thêm Price = ? vào câu lệnh SQL
                 cursor.execute(
-                    """UPDATE Products SET Name = ?, ProductCode = ?, ProductType = ?, Notes = ?, ExpiryDate = ?, PrimaryImageID = ?
+                    """UPDATE Products SET Name = ?, ProductCode = ?, ProductType = ?, ProductTypeID = ?, Notes = ?, ExpiryDate = ?, PrimaryImageID = ?, Price = ? 
                     WHERE ID = ?""",
                     (
                         self.edited_name,
                         self.edited_code,
-                        self.edited_type_code,
+                        self.edited_type_code, 
+                        product_type_id, 
                         self.edited_notes,
                         self.edited_expiry_date or None,
                         image_stt,
+                        self.edited_price,
                         self.selected_product["id"],
                     ),
                 )
                 conn.commit()
-            self.unselect_product() # Sử dụng hàm đã có để reset
+            self.unselect_product()
             self.load_products()
         except Exception as e:
             print(f"Lỗi khi cập nhật: {e}")
@@ -285,7 +318,7 @@ class State(rx.State):
                     self.new_notes.strip() or None,
                     product_type_id,
                     new_image_id,
-                    self.new_price.strip() or None
+                    self.new_price
                 )
                 conn.commit()
 
@@ -297,7 +330,7 @@ class State(rx.State):
                 self.new_image_url = ""
                 self.selected_type_code = ""
                 self.uploaded_image_preview = ""
-                self.new_price = ""
+                self.new_price = Decimal("0.0")
                  # Thêm dòng này để xóa preview
                 self.load_products()
                 self.load_all_images()
@@ -327,11 +360,9 @@ class State(rx.State):
 
     def set_new_price(self, price: str):
         try:
-            # Nếu value là chuỗi rỗng "" hoặc không hợp lệ, nó sẽ gây lỗi
-            # và nhảy xuống khối except.
+            # SỬA LỖI DECIMAL: Nhận str từ UI và chuyển sang Decimal
             self.new_price = Decimal(price)
         except (InvalidOperation, TypeError):
-            # Xử lý trường hợp người dùng xóa hết số trong input
             self.new_price = Decimal("0.0")
 
     def set_edited_type_code(self, code: str):
@@ -358,7 +389,30 @@ class State(rx.State):
     def set_edited_primary_image_url(self, url: str):
         self.edited_primary_image_url = url
 
-
+    def set_edited_price(self, price: str):
+        try:
+            self.edited_price = Decimal(price)
+        except (InvalidOperation, TypeError):
+            # Xử lý trường hợp chuỗi rỗng ("") khi người dùng xóa số
+            self.edited_price = Decimal("0.0")
+    
     def search_on_enter(self, key: str):
         if key == "Enter":
             return self.search_products()
+        
+
+    @rx.var
+    def get_new_price_str(self) -> str:
+        if self.new_price == Decimal("0.0"):
+            return ""
+        
+        # Nếu khác 0.0, trả về giá trị số dưới dạng chuỗi.
+        return str(self.new_price) 
+    
+    @rx.var
+    def get_edited_price_str(self) -> str:
+        if self.edited_price == Decimal("0.0"):
+            return ""
+        
+        # Nếu khác 0.0, trả về giá trị số dưới dạng chuỗi.
+        return str(self.edited_price)
