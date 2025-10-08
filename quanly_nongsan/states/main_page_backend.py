@@ -22,27 +22,64 @@ class MainPageState(rx.State):
     LoginState = LoginState
 
     async def check_login_and_add_to_cart(self, product: dict):
-        """
-        Kiểm tra nếu người dùng đã đăng nhập trước khi thêm vào giỏ hàng.
-        """
-
         login_state = await self.get_state(LoginState)
 
-        # Nếu dict current_user rỗng -> chưa đăng nhập
-        if "username" not in login_state.current_user:
-            # Trả về 2 hành động: hiện thông báo VÀ chuyển trang
+        if "id" not in login_state.current_user:
+            yield rx.window_alert("Bạn phải đăng nhập để mua hàng!")
+            yield rx.redirect("/login_page")
+            return
 
-            return [
-                rx.window_alert("Bạn phải đăng nhập để mua hàng!"),
-                rx.redirect("/login_page"),
-            ]
+        try:
+            user_id = int(login_state.current_user["id"])
+            product_id = int(product.get("id"))
+            product_name = product.get("name", "Sản phẩm")
 
-        # Nếu đã đăng nhập, xử lý logic thêm vào giỏ hàng ở đây
-        # Ví dụ:
-        print(
-            f"Người dùng {self.LoginState.current_user['username']} đã thêm sản phẩm {product['name']} vào giỏ."
-        )
-        return rx.window_alert(f"Đã thêm '{product['name']}' vào giỏ hàng!")
+            with pyodbc.connect(CONNECTION_STRING) as conn:
+                conn.autocommit = False
+                cursor = conn.cursor()
+
+                # B1: Tìm (hoặc tạo) giỏ
+                cursor.execute("SELECT CartID FROM Carts WHERE UserID = ?", (user_id,))
+                row = cursor.fetchone()
+                if row:
+                    cart_id = row.CartID
+                else:
+                    cursor.execute(
+                        "INSERT INTO Carts (UserID) OUTPUT INSERTED.CartID VALUES (?)",
+                        (user_id,),
+                    )
+                    cart_id = cursor.fetchone()[0]
+                    conn.commit()  # hoặc để commit chung phía dưới cũng được
+
+                # B2: Thêm/cộng dồn
+                cursor.execute(
+                    "SELECT CartItemID, Quantity FROM CartItems WHERE CartID = ? AND ProductID = ?",
+                    (cart_id, product_id),
+                )
+                item_row = cursor.fetchone()
+                if item_row:
+                    cursor.execute(
+                        "UPDATE CartItems SET Quantity = ? WHERE CartItemID = ?",
+                        (item_row.Quantity + 1, item_row.CartItemID),
+                    )
+                else:
+                    cursor.execute(
+                        "INSERT INTO CartItems (CartID, ProductID, Quantity) VALUES (?, ?, 1)",
+                        (cart_id, product_id),
+                    )
+
+                conn.commit()
+                yield rx.window_alert(f"Đã thêm '{product_name}' vào giỏ hàng!")
+                return
+
+        except Exception as e:
+            print(f"Lỗi khi thêm vào giỏ hàng: {e}")
+            try:
+                conn.rollback()
+            except:
+                pass
+            yield rx.window_alert("Đã xảy ra lỗi khi thêm sản phẩm vào giỏ hàng.")
+
 
     def load_products(self):
         """
@@ -57,6 +94,7 @@ class MainPageState(rx.State):
                 # Chúng ta dùng LEFT JOIN để vẫn lấy được sản phẩm dù nó không có ảnh
                 query = """
                     SELECT TOP 12
+                        p.ID,
                         p.Name,
                         p.Price,
                         i.ImageURL
@@ -78,6 +116,7 @@ class MainPageState(rx.State):
 
                     temp_products.append(
                         {
+                            "id": row.ID,
                             "name": row.Name,
                             "price": formatted_price,
                             "image_url": (

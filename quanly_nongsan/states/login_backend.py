@@ -27,7 +27,7 @@ class State(rx.State):
                 cursor = conn.cursor()
                 # Tìm user dựa trên username
                 cursor.execute(
-                    "SELECT Username, PasswordHash, Role, FullName FROM Users WHERE Username = ?",
+                    "SELECT ID, Username, PasswordHash, Role, FullName FROM Users WHERE Username = ?",
                     self.username,
                 )
                 user_row = cursor.fetchone()
@@ -35,6 +35,7 @@ class State(rx.State):
                     self.password.encode(), user_row.PasswordHash.encode()
                 ):
                     self.current_user = {
+                        "id": user_row.ID,
                         "username": user_row.Username,
                         "role": user_row.Role,
                         "fullname": user_row.FullName,
@@ -49,6 +50,8 @@ class State(rx.State):
                 else:
                     # ĐĂNG NHẬP THẤT BẠI
                     self.error_message = "Tên đăng nhập hoặc mật khẩu không đúng."
+            self.username = ""
+            self.password = ""
 
         except Exception as e:
             self.error_message = "Lỗi kết nối database."
@@ -87,39 +90,56 @@ class State(rx.State):
     def change_password(self):
         # Kiểm tra người dùng đã đăng nhập chưa
         if "username" not in self.current_user:
-            return rx.window_alert("Lỗi: Bạn chưa đăng nhập.") # Thay thế
+            return rx.window_alert("Lỗi: Bạn chưa đăng nhập.")  # Thay thế
 
         current_username = self.current_user["username"]
 
         # Kiểm tra đầu vào
-        if not self.old_password or not self.new_password or not self.confirm_new_password:
-            return rx.window_alert("Vui lòng điền đầy đủ thông tin.") # Thay thế
-            
+        if (
+            not self.old_password
+            or not self.new_password
+            or not self.confirm_new_password
+        ):
+            return rx.window_alert("Vui lòng điền đầy đủ thông tin.")  # Thay thế
+
         if self.new_password != self.confirm_new_password:
-            return rx.window_alert("Mật khẩu mới và xác nhận mật khẩu không khớp.") # Thay thế
+            return rx.window_alert(
+                "Mật khẩu mới và xác nhận mật khẩu không khớp."
+            )  # Thay thế
 
         try:
             with pyodbc.connect(CONNECTION_STRING) as conn:
                 cursor = conn.cursor()
-                cursor.execute("SELECT PasswordHash FROM Users WHERE Username = ?", current_username)
+                cursor.execute(
+                    "SELECT PasswordHash FROM Users WHERE Username = ?",
+                    current_username,
+                )
                 user_row = cursor.fetchone()
 
-                if user_row and bcrypt.checkpw(self.old_password.encode(), user_row.PasswordHash.encode()):
-                    new_password_hash = bcrypt.hashpw(self.new_password.encode(), bcrypt.gensalt()).decode()
-                    
-                    cursor.execute("UPDATE Users SET PasswordHash = ? WHERE Username = ?", new_password_hash, current_username)
+                if user_row and bcrypt.checkpw(
+                    self.old_password.encode(), user_row.PasswordHash.encode()
+                ):
+                    new_password_hash = bcrypt.hashpw(
+                        self.new_password.encode(), bcrypt.gensalt()
+                    ).decode()
+
+                    cursor.execute(
+                        "UPDATE Users SET PasswordHash = ? WHERE Username = ?",
+                        new_password_hash,
+                        current_username,
+                    )
                     conn.commit()
-                    
+
                     # Xóa các trường input
                     self.old_password = ""
                     self.new_password = ""
                     self.confirm_new_password = ""
-                    
+
                     # Trả về alert thành công
-                    return rx.window_alert("Đổi mật khẩu thành công!") # Thay thế
-                else: 
-                    return rx.window_alert("Mật khẩu hiện tại không đúng.") # Thay thế
+                    return rx.window_alert("Đổi mật khẩu thành công!")  # Thay thế
+                else:
+                    return rx.window_alert("Mật khẩu hiện tại không đúng.")  # Thay thế
 
         except Exception as e:
             print(f"Lỗi khi đổi mật khẩu: {e}")
-            return rx.window_alert("Lỗi hệ thống khi đổi mật khẩu.") # Thay thế
+            return rx.window_alert("Lỗi hệ thống khi đổi mật khẩu.")  # Thay thế
