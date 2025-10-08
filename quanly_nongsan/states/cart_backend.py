@@ -3,8 +3,10 @@ import reflex as rx
 import pyodbc
 import os
 
-from .login_backend import State as LoginState  # điều chỉnh import cho đúng đường dẫn
+from .login_backend import State as LoginState
+
 CONNECTION_STRING = os.getenv("DATABASE_URL")
+
 
 class CartState(rx.State):
     items: list[dict] = []
@@ -14,12 +16,19 @@ class CartState(rx.State):
     def has_items(self) -> bool:
         return len(self.items) > 0
 
-    async def load_cart(self):
-        """Lấy giỏ hàng của user hiện tại."""
+    async def _get_user_id(self) -> int | None:
         login_state = await self.get_state(LoginState)
-        user_id = login_state.current_user.get("id")
+        return login_state.current_user.get("id")
+
+    async def _get_cart_id(self, conn, user_id: int) -> int | None:
+        cur = conn.cursor()
+        cur.execute("SELECT CartID FROM Carts WHERE UserID = ?", (user_id,))
+        row = cur.fetchone()
+        return row.CartID if row else None
+
+    async def load_cart(self):
+        user_id = await self._get_user_id()
         if not user_id:
-            # chưa đăng nhập → báo & điều hướng
             return [
                 rx.window_alert("Bạn phải đăng nhập để xem giỏ hàng!"),
                 rx.redirect("/login_page"),
@@ -29,9 +38,8 @@ class CartState(rx.State):
         total = 0
         try:
             with pyodbc.connect(CONNECTION_STRING) as conn:
-                cursor = conn.cursor()
-                # Lấy các item trong giỏ: tên SP, giá, số lượng, ảnh
-                cursor.execute(
+                cur = conn.cursor()
+                cur.execute(
                     """
                     SELECT ci.CartItemID,
                            p.ID       AS ProductID,
@@ -48,8 +56,7 @@ class CartState(rx.State):
                     """,
                     (user_id,),
                 )
-                rows = cursor.fetchall()
-                for r in rows:
+                for r in cur.fetchall():
                     line_total = int(r.Price) * int(r.Quantity)
                     total += line_total
                     tmp.append(
@@ -69,24 +76,119 @@ class CartState(rx.State):
         self.items = tmp
         self.total = total
 
-    def increment_item(self, cart_item_id: int):
-        """Tăng số lượng 1 item (demo – bạn có thể gắn SQL UPDATE)."""
-        for it in self.items:
-            if it["cart_item_id"] == cart_item_id:
-                it["quantity"] += 1
-                it["line_total"] = it["quantity"] * it["price"]
-                break
-        self.total = sum(it["line_total"] for it in self.items)
+    # +1 số lượng
+    async def increment_item(self, cart_item_id: int):
+        user_id = await self._get_user_id()
+        if not user_id:
+            return [rx.window_alert("Bạn cần đăng nhập!"), rx.redirect("/login_page")]
+        try:
+            with pyodbc.connect(CONNECTION_STRING) as conn:
+                cur = conn.cursor()
+                # Chỉ update item thuộc cart của user
+                cur.execute(
+                    """
+                    UPDATE ci SET Quantity = Quantity + 1
+                    FROM CartItems ci
+                    JOIN Carts c ON c.CartID = ci.CartID
+                    WHERE ci.CartItemID = ? AND c.UserID = ?
+                    """,
+                    (cart_item_id, user_id),
+                )
+                conn.commit()
+        except Exception as e:
+            print(f"increment_item error: {e}")
+        # reload lại state
+        return type(self).load_cart()
 
-    def decrement_item(self, cart_item_id: int):
-        for it in self.items:
-            if it["cart_item_id"] == cart_item_id and it["quantity"] > 1:
-                it["quantity"] -= 1
-                it["line_total"] = it["quantity"] * it["price"]
-                break
-        self.total = sum(it["line_total"] for it in self.items)
+    # -1 số lượng; nếu =1 thì xóa khỏi giỏ
+    async def decrement_item(self, cart_item_id: int):
+        user_id = await self._get_user_id()
+        if not user_id:
+            return [rx.window_alert("Bạn cần đăng nhập!"), rx.redirect("/login_page")]
+        try:
+            with pyodbc.connect(CONNECTION_STRING) as conn:
+                cur = conn.cursor()
+                # Lấy qty hiện tại (và thuộc user)
+                cur.execute(
+                    """
+                    SELECT ci.Quantity
+                    FROM CartItems ci
+                    JOIN Carts c ON c.CartID = ci.CartID
+                    WHERE ci.CartItemID = ? AND c.UserID = ?
+                    """,
+                    (cart_item_id, user_id),
+                )
+                row = cur.fetchone()
+                if not row:
+                    return
+                qty = int(row.Quantity)
+                if qty <= 1:
+                    # Xóa luôn item
+                    cur.execute(
+                        """
+                        DELETE ci
+                        FROM CartItems ci
+                        JOIN Carts c ON c.CartID = ci.CartID
+                        WHERE ci.CartItemID = ? AND c.UserID = ?
+                        """,
+                        (cart_item_id, user_id),
+                    )
+                else:
+                    # Giảm số lượng
+                    cur.execute(
+                        """
+                        UPDATE ci SET Quantity = Quantity - 1
+                        FROM CartItems ci
+                        JOIN Carts c ON c.CartID = ci.CartID
+                        WHERE ci.CartItemID = ? AND c.UserID = ?
+                        """,
+                        (cart_item_id, user_id),
+                    )
+                conn.commit()
+        except Exception as e:
+            print(f"decrement_item error: {e}")
+        return type(self).load_cart()
 
-    def clear_cart(self):
-        """Xóa hết trong giỏ (demo – gắn SQL DELETE nếu muốn)."""
-        self.items = []
-        self.total = 0
+    # Xóa 1 dòng theo CartItemID
+    async def delete_item(self, cart_item_id: int):
+        user_id = await self._get_user_id()
+        if not user_id:
+            return [rx.window_alert("Bạn cần đăng nhập!"), rx.redirect("/login_page")]
+        try:
+            with pyodbc.connect(CONNECTION_STRING) as conn:
+                cur = conn.cursor()
+                cur.execute(
+                    """
+                    DELETE ci
+                    FROM CartItems ci
+                    JOIN Carts c ON c.CartID = ci.CartID
+                    WHERE ci.CartItemID = ? AND c.UserID = ?
+                    """,
+                    (cart_item_id, user_id),
+                )
+                conn.commit()
+        except Exception as e:
+            print(f"delete_item error: {e}")
+        return type(self).load_cart()
+
+    # Xóa hết giỏ của user
+    async def clear_cart(self):
+        user_id = await self._get_user_id()
+        if not user_id:
+            return [rx.window_alert("Bạn cần đăng nhập!"), rx.redirect("/login_page")]
+        try:
+            with pyodbc.connect(CONNECTION_STRING) as conn:
+                cur = conn.cursor()
+                cur.execute(
+                    """
+                    DELETE ci
+                    FROM CartItems ci
+                    JOIN Carts c ON c.CartID = ci.CartID
+                    WHERE c.UserID = ?
+                    """,
+                    (user_id,),
+                )
+                conn.commit()
+        except Exception as e:
+            print(f"clear_cart error: {e}")
+        return type(self).load_cart()

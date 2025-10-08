@@ -1,73 +1,15 @@
+# cart_ui.py
 import reflex as rx
+from .main_page_and_cart_header import header
 from ..states.cart_backend import CartState
 from ..states.login_backend import State as LoginState
-
-
-def header() -> rx.Component:
-    """Component cho phần header đầu trang."""
-    return rx.hstack(
-        rx.hstack(
-            rx.link(
-                rx.hstack(
-                    rx.image(src="/logonongsan.png", width="90px", height="90px"),
-                    rx.center(
-                        rx.text("MyWorldtoFarm.com"),
-                    ),
-                    align_items="center",
-                ),
-                width="30%",
-                href="/",  # Link về trang chủ
-            ),
-            rx.hstack(
-                rx.center(
-                    rx.input(placeholder="Tìm kiếm", width="100%", height="40px"),
-                    rx.button(rx.icon(tag="search"), height="40px"),
-                    width="60%",
-                    align_items="center",
-                ),
-                width="100%",
-                align_items="center",
-            ),
-            rx.hstack(
-                rx.link(
-                    rx.vstack(
-                        rx.icon(tag="shopping-bag"),
-                        rx.text("Cart"),
-                        width="100%",
-                        color="white",
-                    ),
-                    href="/cart",  # Link tới giỏ hàng
-                ),
-                rx.link(
-                    rx.vstack(
-                        rx.icon(tag="user"),
-                        rx.text("Login"),
-                        width="100%",
-                        color="white",
-                    ),
-                    href="/login_page",  # Link tới trang đăng nhập
-                ),
-            ),
-            align_items="center",
-            width="100%",
-        ),
-        height="100px",
-        width="100%",
-        bg="#0069D1",
-        padding_x="2%",  # Dùng padding_x cho gọn
-        align_items="center",
-        justify="between",
-    )
-
 
 def cart_no_item() -> rx.Component:
     return rx.center(
         rx.vstack(
             rx.heading("Giỏ hàng của Bạn", size="3"),
-            rx.vstack(
-                rx.image(src="/cart.png", width="300px"),
-            ),
-            rx.button("Tiếp tục mua hàng", color="white", bg="green", size="3"),
+            rx.vstack(rx.image(src="/cart.jpg", width="300px")),
+            rx.link(rx.button("Tiếp tục mua hàng", color="white", bg="green", size="3"), href="/"),
             align_items="center",
             color="black",
             width="100%",
@@ -77,13 +19,16 @@ def cart_no_item() -> rx.Component:
         padding_x="3%",
     )
 
-
 def cart_item() -> rx.Component:
     def row_view(it: dict):
         return rx.hstack(
             rx.vstack(
                 rx.image(src=it["image_url"], width="50px"),
-                rx.link("Xóa"),  # gắn handler xóa nếu bạn muốn
+                rx.link(
+                    "Xóa",
+                    on_click=CartState.delete_item(it["cart_item_id"]),  # NEW
+                    style={"cursor": "pointer", "textDecoration": "underline"},
+                ),
             ),
             rx.text(it["name"]),
             rx.vstack(
@@ -91,14 +36,14 @@ def cart_item() -> rx.Component:
                 rx.hstack(
                     rx.button(
                         "-",
-                        on_click=lambda: CartState.decrement_item(it["cart_item_id"]),
+                        on_click=CartState.decrement_item(it["cart_item_id"]),  # đổi: bỏ lambda
                         color="#0069D1",
                         bg="#E4E9F2",
                     ),
                     rx.text(it["quantity"]),
                     rx.button(
                         "+",
-                        on_click=lambda: CartState.increment_item(it["cart_item_id"]),
+                        on_click=CartState.increment_item(it["cart_item_id"]),  # đổi: bỏ lambda
                         color="#0069D1",
                         bg="#E4E9F2",
                     ),
@@ -148,25 +93,19 @@ def cart_item() -> rx.Component:
                 bg="white",
                 border_radius="4px",
             ),
-            rx.vstack(
-                rx.hstack(
-                    rx.icon(tag="wallet"),
-                    rx.text("Tiền mặt khi nhận hàng"),
-                    justify="between",
-                    align_items="center",
-                    width="100%",
-                ),
-                width="100%",
-                bg="white",
-                border_radius="4px",
-                padding="8px",
-            ),
+            # NEW: Hàng nút hành động
             rx.hstack(
+                rx.button(
+                    "Xóa hết giỏ hàng",
+                    on_click=CartState.clear_cart(),      # gọi hàm clear
+                    variant="surface",
+                    color_scheme="red",
+                ),
+                rx.spacer(),
                 rx.button(
                     rx.icon(tag="store"),
                     rx.text("Đặt hàng"),
                     rx.text(f"{CartState.total:,} đ".replace(",", ".")),
-                    width="100%",
                     padding="8px",
                     bg="green",
                     color="white",
@@ -184,16 +123,10 @@ def cart_item() -> rx.Component:
         margin_top="0.5%",
     )
 
-
 def index() -> rx.Component:
-    """Hàm dựng giao diện chính của trang chủ."""
     return rx.vstack(
         header(),
-        rx.cond(
-            CartState.has_items,
-            cart_item(),
-            cart_no_item(),
-        ),
+        rx.cond(CartState.has_items, cart_item(), cart_no_item()),
         bg="#F5F5F5",
         gap="0",
         width="100%",

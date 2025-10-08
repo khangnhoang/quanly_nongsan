@@ -40,6 +40,10 @@ class State(rx.State):
                         "role": user_row.Role,
                         "fullname": user_row.FullName,
                     }
+
+                    self.username = ""
+                    self.password = ""
+
                     if self.current_user["role"] == "user":
                         return rx.redirect("/main_page")
                     else:
@@ -50,8 +54,6 @@ class State(rx.State):
                 else:
                     # ĐĂNG NHẬP THẤT BẠI
                     self.error_message = "Tên đăng nhập hoặc mật khẩu không đúng."
-            self.username = ""
-            self.password = ""
 
         except Exception as e:
             self.error_message = "Lỗi kết nối database."
