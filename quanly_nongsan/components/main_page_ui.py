@@ -1,7 +1,7 @@
 import reflex as rx
 
 # Import State của bạn
-from .main_page_backend import MainPageState
+from ..states.main_page_backend import MainPageState
 
 
 def product_type_item(item: rx.Var[dict]) -> rx.Component:
@@ -61,6 +61,30 @@ def header() -> rx.Component:
                     ),
                     href="/cart",  # Link tới giỏ hàng
                 ),
+                rx.cond(
+                MainPageState.LoginState.current_user,
+                # Nếu ĐÃ đăng nhập (current_user không rỗng)
+                rx.hstack(
+                     rx.link(
+                        rx.vstack(
+                            rx.icon(tag="user"),
+                            rx.text(MainPageState.LoginState.current_user.get("fullname", "User")),
+                            width="100%",
+                            color="white",
+                        ),
+                        href="/customer" # Chuyển đến trang thông tin khách hàng
+                    ),
+                    rx.link(
+                        rx.vstack(
+                           rx.icon(tag="log-out"),
+                           rx.text("Logout"),
+                           width="100%",
+                           color="white",
+                        ),
+                       on_click=MainPageState.LoginState.handle_logout
+                    )
+                ),
+                # Nếu CHƯA đăng nhập (current_user rỗng)
                 rx.link(
                     rx.vstack(
                         rx.icon(tag="user"),
@@ -68,9 +92,10 @@ def header() -> rx.Component:
                         width="100%",
                         color="white",
                     ),
-                    href="/login_page",  # Link tới trang đăng nhập
+                    href="/login_page",
                 ),
-            ),
+            )
+        ),
             align_items="center",
             width="100%",
         ),
@@ -113,36 +138,45 @@ def navigation() -> rx.Component:
         padding_x="2%",
     )
 
+
 # --- PHẦN ĐƯỢC SỬA LẠI ---
+
 
 def product_item(product: rx.Var[dict]) -> rx.Component:
     """Component để hiển thị một item sản phẩm duy nhất."""
-    return rx.link(
-        rx.vstack(
+    return rx.vstack(
+        # Link bọc toàn bộ sản phẩm, khi click sẽ đi đến trang chi tiết
+        rx.link(
             rx.image(
-                src=product["image_url"], # Lấy URL ảnh từ state
+                src=product["image_url"],
                 width="100%",
-                height="auto",
-                aspect_ratio="1 / 1", # Giữ ảnh vuông
+                aspect_ratio="1 / 1",
                 object_fit="cover",
             ),
             rx.vstack(
-                rx.text(product["name"], color="black", font_weight="bold", size="2"), # Lấy tên
-                rx.text(product["price"], color="red", size="3"), # Lấy giá
+                rx.text(product["name"], color="black", font_weight="bold", size="2"),
+                rx.text(product["price"], color="red", size="3"),
                 align_items="start",
                 spacing="1",
                 width="100%",
                 padding="8px",
             ),
-            bg="#FFFFFF",
-            align_items="start",
-            spacing="2",
-            border="1px solid #eee",
-            border_radius="5px",
-            overflow="hidden",
-            _hover={"box_shadow": "0px 4px 10px rgba(0, 0, 0, 0.1)"}
+            href="#",  # Link chi tiết sản phẩm
         ),
-        href="#"
+        # Nút thêm vào giỏ hàng
+        rx.button(
+            "Thêm vào giỏ hàng",
+            on_click=lambda: MainPageState.check_login_and_add_to_cart(product),
+            width="100%",
+            margin_top="auto",  # Đẩy nút xuống dưới cùng
+            cursor="pointer",
+        ),
+        bg="#FFFFFF",
+        border="1px solid #eee",
+        border_radius="5px",
+        overflow="hidden",
+        _hover={"box_shadow": "0px 4px 10px rgba(0, 0, 0, 0.1)"},
+        height="100%",  # Đảm bảo các card có chiều cao bằng nhau
     )
 
 
@@ -179,7 +213,9 @@ def content() -> rx.Component:
         padding_x="3%",
     )
 
+
 # --- KẾT THÚC PHẦN SỬA ---
+
 
 def footer():
     # ... (Nội dung hàm footer giữ nguyên)

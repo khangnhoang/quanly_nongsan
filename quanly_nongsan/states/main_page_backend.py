@@ -2,6 +2,7 @@ import reflex as rx
 import pyodbc
 import os
 from dotenv import load_dotenv
+from .login_backend import State as LoginState
 
 load_dotenv()
 CONNECTION_STRING = os.getenv("DATABASE_URL")
@@ -17,6 +18,24 @@ class MainPageState(rx.State):
     # Biến state để lưu danh sách sản phẩm
     # Cấu trúc: [{"name": "Tên SP", "price": "Giá", "image_url": "/url/anh.jpg"}, ...]
     products: list[dict] = []
+    LoginState = LoginState
+    
+    def check_login_and_add_to_cart(self, product: dict):
+        """
+        Kiểm tra nếu người dùng đã đăng nhập trước khi thêm vào giỏ hàng.
+        """
+        # Nếu dict current_user rỗng -> chưa đăng nhập
+        if not self.LoginState.current_user:
+            # Trả về 2 hành động: hiện thông báo VÀ chuyển trang
+            return (
+                rx.window_alert("Bạn phải đăng nhập để mua hàng!"),
+                rx.redirect("/login_page")
+            )
+        
+        # Nếu đã đăng nhập, xử lý logic thêm vào giỏ hàng ở đây
+        # Ví dụ:
+        print(f"Người dùng {self.LoginState.current_user['username']} đã thêm sản phẩm {product['name']} vào giỏ.")
+        return rx.window_alert(f"Đã thêm '{product['name']}' vào giỏ hàng!")
 
     def load_products(self):
         """
