@@ -166,7 +166,7 @@ def product_item(product: rx.Var[dict]) -> rx.Component:
         # Nút thêm vào giỏ hàng
         rx.button(
             "Thêm vào giỏ hàng",
-            on_click=lambda: MainPageState.check_login_and_add_to_cart(product),
+            on_click=MainPageState.check_login_and_add_to_cart(product),
             width="100%",
             margin_top="auto",  # Đẩy nút xuống dưới cùng
             cursor="pointer",

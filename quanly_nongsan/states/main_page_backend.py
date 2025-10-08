@@ -7,6 +7,7 @@ from .login_backend import State as LoginState
 load_dotenv()
 CONNECTION_STRING = os.getenv("DATABASE_URL")
 
+
 class MainPageState(rx.State):
     """State quản lý dữ liệu cho trang chính."""
 
@@ -19,22 +20,28 @@ class MainPageState(rx.State):
     # Cấu trúc: [{"name": "Tên SP", "price": "Giá", "image_url": "/url/anh.jpg"}, ...]
     products: list[dict] = []
     LoginState = LoginState
-    
-    def check_login_and_add_to_cart(self, product: dict):
+
+    async def check_login_and_add_to_cart(self, product: dict):
         """
         Kiểm tra nếu người dùng đã đăng nhập trước khi thêm vào giỏ hàng.
         """
+
+        login_state = await self.get_state(LoginState)
+
         # Nếu dict current_user rỗng -> chưa đăng nhập
-        if not self.LoginState.current_user:
+        if "username" not in login_state.current_user:
             # Trả về 2 hành động: hiện thông báo VÀ chuyển trang
-            return (
+
+            return [
                 rx.window_alert("Bạn phải đăng nhập để mua hàng!"),
-                rx.redirect("/login_page")
-            )
-        
+                rx.redirect("/login_page"),
+            ]
+
         # Nếu đã đăng nhập, xử lý logic thêm vào giỏ hàng ở đây
         # Ví dụ:
-        print(f"Người dùng {self.LoginState.current_user['username']} đã thêm sản phẩm {product['name']} vào giỏ.")
+        print(
+            f"Người dùng {self.LoginState.current_user['username']} đã thêm sản phẩm {product['name']} vào giỏ."
+        )
         return rx.window_alert(f"Đã thêm '{product['name']}' vào giỏ hàng!")
 
     def load_products(self):
@@ -69,17 +76,22 @@ class MainPageState(rx.State):
                     # Định dạng lại giá tiền cho đẹp hơn (ví dụ: 60000 -> 60.000 đ)
                     formatted_price = f"{int(row.Price):,} đ".replace(",", ".")
 
-                    temp_products.append({
-                        "name": row.Name,
-                        "price": formatted_price,
-                        "image_url": row.ImageURL if row.ImageURL else "/no-image.png" # Dùng ảnh mặc định nếu không có
-                    })
-            
+                    temp_products.append(
+                        {
+                            "name": row.Name,
+                            "price": formatted_price,
+                            "image_url": (
+                                row.ImageURL if row.ImageURL else "/no-image.png"
+                            ),  # Dùng ảnh mặc định nếu không có
+                        }
+                    )
+
             # Cập nhật state với danh sách sản phẩm
             self.products = temp_products
 
         except Exception as e:
             print(f"Lỗi khi tải danh sách sản phẩm: {e}")
+
     # --- KẾT THÚC PHẦN MỚI ---
 
     def load_product_types(self):
@@ -101,11 +113,11 @@ class MainPageState(rx.State):
                     # Dùng TOP 1 để chỉ lấy ảnh đầu tiên tìm thấy
                     # Dựa theo quy tắc của bạn: imageurl like '%loai%' và thêm mã code để chính xác hơn
                     image_query = "SELECT TOP 1 ImageURL FROM Images WHERE ImageURL LIKE ? ORDER BY STT"
-                    
+
                     # Pattern tìm kiếm, ví dụ: %/loai_RAUCU%
                     # Điều này giả định bạn đặt tên file ảnh là /loai_CODE.jpg
                     search_pattern = f"%/loai_{pt.Code}%"
-                    
+
                     cursor.execute(image_query, search_pattern)
                     image_row = cursor.fetchone()
 
@@ -114,11 +126,8 @@ class MainPageState(rx.State):
                         image_url = image_row.ImageURL
 
                     # Thêm vào danh sách tạm thời
-                    temp_list.append({
-                        "name": pt.Name,
-                        "image_url": image_url
-                    })
-            
+                    temp_list.append({"name": pt.Name, "image_url": image_url})
+
             # B3: Cập nhật state với dữ liệu đã lấy được
             self.product_types_with_images = temp_list
 
