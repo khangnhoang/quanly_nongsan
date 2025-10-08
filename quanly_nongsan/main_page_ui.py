@@ -113,39 +113,40 @@ def navigation() -> rx.Component:
         padding_x="2%",
     )
 
+# --- PHẦN ĐƯỢC SỬA LẠI ---
 
-def product_list() -> rx.Component:
-    return rx.vstack(
-        rx.hstack(
-            rx.vstack(
-                rx.image(
-                    src="/duachuot.jpg",
-                    width="100%",
-                    height="200px",
-                    max_height="150px",
-                    object_fit="cover",
-                ),
-                rx.vstack(
-                    rx.text("Dưa Chuột", color="black"),
-                    rx.text("60.000 đ", color="red"),
-                    align_items="start",
-                    spacing="1",
-                    width="100%",
-                    padding="12px",
-                ),
-                bg="#FFFFFF",
-                align_items="start",
-                spacing="2",
-                min_width="120px",
-                border="1px solid #eee",
+def product_item(product: rx.Var[dict]) -> rx.Component:
+    """Component để hiển thị một item sản phẩm duy nhất."""
+    return rx.link(
+        rx.vstack(
+            rx.image(
+                src=product["image_url"], # Lấy URL ảnh từ state
+                width="100%",
+                height="auto",
+                aspect_ratio="1 / 1", # Giữ ảnh vuông
+                object_fit="cover",
             ),
+            rx.vstack(
+                rx.text(product["name"], color="black", font_weight="bold", size="2"), # Lấy tên
+                rx.text(product["price"], color="red", size="3"), # Lấy giá
+                align_items="start",
+                spacing="1",
+                width="100%",
+                padding="8px",
+            ),
+            bg="#FFFFFF",
+            align_items="start",
+            spacing="2",
+            border="1px solid #eee",
+            border_radius="5px",
+            overflow="hidden",
+            _hover={"box_shadow": "0px 4px 10px rgba(0, 0, 0, 0.1)"}
         ),
+        href="#"
     )
 
 
 def content() -> rx.Component:
-    products = [product_list() for _ in range(12)]
-
     return rx.vstack(
         rx.vstack(
             rx.hstack(
@@ -164,13 +165,13 @@ def content() -> rx.Component:
                 border_bottom="3px solid #007CBA",
                 border_radius="0",
             ),
+            # Dùng rx.foreach để lặp qua danh sách sản phẩm từ state
             rx.grid(
-                *products,
-                # Chỉ định RÕ RÀNG 6 cột (1fr)
+                rx.foreach(MainPageState.products, product_item),
                 grid_template_columns="repeat(6, 1fr)",
-                # Khoảng cách giữa các ô Grid
-                gap="10px",
+                gap="16px",
                 width="100%",
+                padding_top="16px",
             ),
         ),
         align_items="center",
@@ -178,8 +179,10 @@ def content() -> rx.Component:
         padding_x="3%",
     )
 
+# --- KẾT THÚC PHẦN SỬA ---
 
 def footer():
+    # ... (Nội dung hàm footer giữ nguyên)
     return rx.vstack(
         rx.box(
             border="1px solid #eee",
@@ -317,6 +320,7 @@ def footer():
 
 
 def footer_end():
+    # ... (Nội dung hàm footer_end giữ nguyên)
     return (
         rx.box(
             rx.text("Copyright 2025 © TheGioiNongSan.Com", font_size="14px"),
@@ -333,7 +337,7 @@ def footer_end():
 def index() -> rx.Component:
     """Hàm dựng giao diện chính của trang chủ."""
     return rx.vstack(
-        header(),  # Gọi component header
+        header(),
         rx.box(border="0.5px solid whitesmoke", width="100%"),
         navigation(),
         rx.hstack(
@@ -351,5 +355,6 @@ def index() -> rx.Component:
         footer_end(),
         bg="#F5F5F5",
         gap="0",
-        on_mount=MainPageState.load_product_types,
+        # --- DÒNG SỬA ---
+        on_mount=[MainPageState.load_product_types, MainPageState.load_products],
     )
