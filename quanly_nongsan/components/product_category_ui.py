@@ -444,5 +444,5 @@ def index() -> rx.Component:
         gap="0",
         width="100%",
         height="100vh",
-        on_mount=State.productState2.on_page_load,  # Sửa lại on_mount
+        on_mount=[State.LoginState.try_auto_login, State.productState2.on_page_load,]  # Sửa lại on_mount
     )

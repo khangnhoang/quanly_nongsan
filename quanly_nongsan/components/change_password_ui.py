@@ -64,4 +64,4 @@ def main_content() -> rx.Component:
 
 
 def index() -> rx.Component:
-    return rx.hstack(sidebar(), main_content(), gap="0")
+    return rx.hstack(sidebar(), main_content(), gap="0", on_mount=State.LoginState.try_auto_login)

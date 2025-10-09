@@ -289,5 +289,5 @@ def index() -> rx.Component:
         gap="0",
         width="100%",
         height="100vh",
-        on_mount=State.productState.load_products_type,
+        on_mount=[State.LoginState.try_auto_login, State.productState.load_products_type,]
     )

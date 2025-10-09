@@ -2,8 +2,7 @@
 
 import reflex as rx
 from .main_page_and_cart_header import header
-from ..states.cart_backend import CartState
-from ..state import State
+from ..states.state import State
 
 
 def cart_no_item() -> rx.Component:

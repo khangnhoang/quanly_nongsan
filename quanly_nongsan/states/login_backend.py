@@ -37,6 +37,7 @@ class State(rx.State):
             data = json.loads(text)
             if isinstance(data, dict) and data.get("id") and data.get("username"):
                 self.current_user = data
+                return self.redirect_if_logged_in()
         except Exception:
             pass
         return []  # phải trả về list rỗng để hợp lệ
@@ -142,6 +143,21 @@ class State(rx.State):
             rx.call_script('document.cookie = "auth_user=; Max-Age=0; Path=/";'),
             rx.redirect("/login_page"),
         ]
+        
+    def redirect_if_logged_in(self):
+        """
+        Kiểm tra state hiện tại, nếu người dùng đã đăng nhập (current_user có dữ liệu),
+        sẽ tự động chuyển hướng họ đến trang phù hợp.
+        Hàm này sẽ được gọi ngay sau khi try_auto_login chạy xong.
+        """
+        # Kiểm tra xem current_user có rỗng không và có key 'id' không
+        if self.router.url.path == "/":
+            if self.current_user and self.current_user.get("id"):
+                role = self.current_user.get("role")
+                if role == "user":
+                    return rx.redirect("/main_page")
+                else:
+                    return rx.redirect("/product_types")
 
     def login_on_enter(self, key: str):
         if key == "Enter":

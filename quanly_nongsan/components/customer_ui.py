@@ -316,7 +316,7 @@ def index() -> rx.Component:
     return rx.hstack(
         sidebar(),
         main_content(),
-        on_mount=State.UserState.load_users,
+        on_mount=[State.LoginState.try_auto_login, State.UserState.load_users,],
         gap="0",
         max_width="100%",
         height="100vh",

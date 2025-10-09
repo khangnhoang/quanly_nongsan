@@ -1,6 +1,7 @@
 import reflex as rx
 from ..state import State
 
+
 def index() -> rx.Component:
     return rx.center(
         rx.hstack(
@@ -60,4 +61,5 @@ def index() -> rx.Component:
         bg="white",
         width="100%",
         height="100vh",
+        on_mount=State.LoginState.try_auto_login,
     )

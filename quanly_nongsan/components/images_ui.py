@@ -221,5 +221,5 @@ def image_page() -> rx.Component:
         gap="0",
         width="100%",
         height="100vh",
-        on_mount=State.ImageState.load_images,
+        on_mount=[State.LoginState.try_auto_login, State.ImageState.load_images,]
     )
