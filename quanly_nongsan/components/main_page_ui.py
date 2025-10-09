@@ -1,7 +1,8 @@
 import reflex as rx
 from .main_page_and_cart_header import header
+
 # Import State của bạn
-from ..states.main_page_backend import MainPageState
+from ..state import State
 
 
 def product_type_item(item: rx.Var[dict]) -> rx.Component:
@@ -84,7 +85,7 @@ def product_item(product: rx.Var[dict]) -> rx.Component:
         # Nút thêm vào giỏ hàng
         rx.button(
             "Thêm vào giỏ hàng",
-            on_click=MainPageState.check_login_and_add_to_cart(product),
+            on_click=State.MainPageState.check_login_and_add_to_cart(product),
             width="100%",
             margin_top="auto",  # Đẩy nút xuống dưới cùng
             cursor="pointer",
@@ -119,7 +120,7 @@ def content() -> rx.Component:
             ),
             # Dùng rx.foreach để lặp qua danh sách sản phẩm từ state
             rx.grid(
-                rx.foreach(MainPageState.products, product_item),
+                rx.foreach(State.MainPageState.products, product_item),
                 grid_template_columns="repeat(6, 1fr)",
                 gap="16px",
                 width="100%",
@@ -295,7 +296,9 @@ def index() -> rx.Component:
         rx.box(border="0.5px solid whitesmoke", width="100%"),
         navigation(),
         rx.hstack(
-            rx.foreach(MainPageState.product_types_with_images, product_type_item),
+            rx.foreach(
+                State.MainPageState.product_types_with_images, product_type_item
+            ),
             margin_top="12px",
             width="100%",
             align_items="center",
@@ -310,5 +313,9 @@ def index() -> rx.Component:
         bg="#F5F5F5",
         gap="0",
         # --- DÒNG SỬA ---
-        on_mount=[MainPageState.load_product_types, MainPageState.load_products],
+        on_mount=[
+            State.LoginState.try_auto_login,
+            State.MainPageState.load_product_types,
+            State.MainPageState.load_products,
+        ],
     )
