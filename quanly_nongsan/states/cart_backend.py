@@ -1,4 +1,3 @@
-# cart_backend.py
 import reflex as rx
 import pyodbc
 import os
@@ -11,7 +10,14 @@ CONNECTION_STRING = os.getenv("DATABASE_URL")
 class CartState(rx.State):
     items: list[dict] = []
     total: int = 0
-
+    
+    # THÔNG TIN KHÁCH HÀNG (Lấy từ DB Users)
+    user_full_name: str = ""
+    user_phone: str = ""
+    user_address: str = ""
+    
+    is_loading: bool = False
+    
     @rx.var
     def has_items(self) -> bool:
         return len(self.items) > 0
@@ -39,6 +45,23 @@ class CartState(rx.State):
         try:
             with pyodbc.connect(CONNECTION_STRING) as conn:
                 cur = conn.cursor()
+                
+                # 1. LẤY THÔNG TIN USER TỪ DB (FullName, PhoneNumber, Address)
+                cur.execute(
+                    """
+                    SELECT FullName, PhoneNumber, Address
+                    FROM Users
+                    WHERE ID = ?
+                    """,
+                    (user_id,)
+                )
+                user_row = cur.fetchone()
+                if user_row:
+                    self.user_full_name = user_row.FullName or ""
+                    self.user_phone = user_row.PhoneNumber or ""
+                    self.user_address = user_row.Address or ""
+                
+                # 2. LẤY DANH SÁCH SẢN PHẨM TRONG GIỎ
                 cur.execute(
                     """
                     SELECT ci.CartItemID,
@@ -192,3 +215,90 @@ class CartState(rx.State):
         except Exception as e:
             print(f"clear_cart error: {e}")
         return type(self).load_cart()
+
+    async def place_order(self):
+            self.is_loading = True
+            
+            user_id = await self._get_user_id()
+            if not user_id:
+                self.is_loading = False
+                return [rx.window_alert("Bạn cần đăng nhập!"), rx.redirect("/login_page")]
+            if not self.items:
+                self.is_loading = False
+                return rx.window_alert("Giỏ hàng của bạn đang trống!")
+            
+            # KIỂM TRA THÔNG TIN USER TỪ DB
+            if not self.user_full_name or not self.user_phone or not self.user_address:
+                self.is_loading = False
+                return rx.window_alert("Vui lòng cập nhật đầy đủ Họ tên, SĐT và Địa chỉ trong hồ sơ trước khi đặt hàng!")
+
+            try:
+                with pyodbc.connect(CONNECTION_STRING) as conn:
+                    cur = conn.cursor() 
+
+                    try:
+                        # 3. TẠO ĐƠN HÀNG MỚI (Orders)
+                        cur.execute(
+                            """
+                            INSERT INTO Orders 
+                            (UserID, OrderDate, Status, RecipientName, RecipientPhone, ShippingAddress)
+                            OUTPUT INSERTED.ID
+                            VALUES (?, GETDATE(), ?, ?, ?, ?)
+                            """,
+                            (
+                                user_id,
+                                1, # 1 là trạng thái: Chờ xác nhận
+                                self.user_full_name,
+                                self.user_phone,
+                                self.user_address,
+                            ),
+                        )
+                        order_id = cur.fetchone()[0]
+
+                        # 4. THÊM CÁC MẶT HÀNG VÀO CHI TIẾT ĐƠN HÀNG (OrderItems)
+                        for item in self.items:
+                            cur.execute(
+                                """
+                                INSERT INTO OrderItems (OrderID, ProductID, Quantity)
+                                VALUES (?, ?, ?)
+                                """,
+                                (
+                                    order_id,
+                                    item["product_id"],
+                                    item["quantity"],
+                                ),
+                            )
+
+                        # 5. XÓA TẤT CẢ SẢN PHẨM TRONG GIỎ HÀNG CỦA USER (CartItems)
+                        cur.execute(
+                            "SELECT CartID FROM Carts WHERE UserID = ?", (user_id,)
+                        )
+                        cart_id = cur.fetchone()[0]
+                        
+                        cur.execute(
+                            "DELETE FROM CartItems WHERE CartID = ?", (cart_id,)
+                        )
+                        
+                        conn.commit()
+                        
+                        # Reset state: CHỈ CẦN RESET items VÀ total.
+                        self.items = []
+                        self.total = 0
+                        
+                        self.is_loading = False
+
+                        return [
+                            rx.window_alert("Đặt hàng thành công!"),
+                            rx.redirect("/") 
+                        ]
+
+                    except Exception as e:
+                        print(f"Lỗi trong transaction, đang rollback: {e}")
+                        conn.rollback()
+                        self.is_loading = False
+                        return rx.window_alert(f"Đã xảy ra lỗi khi đặt hàng: {e}")
+
+            except Exception as e:
+                print(f"Lỗi kết nối CSDL khi đặt hàng: {e}")
+                self.is_loading = False
+                return rx.window_alert("Lỗi hệ thống, vui lòng thử lại sau.")
