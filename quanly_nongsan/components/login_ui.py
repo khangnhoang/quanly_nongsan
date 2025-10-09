@@ -1,6 +1,5 @@
 import reflex as rx
-from ..states.state import State
-
+from ..state import State
 
 def index() -> rx.Component:
     return rx.center(
@@ -30,6 +29,15 @@ def index() -> rx.Component:
                     style={"input::placeholder": {"color": "#ccc"}},
                     color="black",
                     on_key_down=State.LoginState.login_on_enter,
+                ),
+                rx.hstack(
+                    rx.checkbox(
+                        checked=State.LoginState.remember_me,
+                        on_change=State.LoginState.set_remember_me,
+                    ),
+                    rx.text("Ghi nhớ tôi", size="1"),
+                    align="center",
+                    gap="6px",
                 ),
                 rx.button(
                     "Login",
