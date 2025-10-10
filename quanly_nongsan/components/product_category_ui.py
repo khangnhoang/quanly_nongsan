@@ -291,7 +291,7 @@ def main_content():
                             rx.text("Chỉ nhận file . PNG, JPG, JPEG"),
                             align="start",
                         ),
-                        rx.button("Duyệt file"),
+                        rx.button("Duyệt file", cursor = "pointer"),
                         justify="between",
                         align="center",
                         width="100%",

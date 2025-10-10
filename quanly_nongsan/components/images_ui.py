@@ -115,6 +115,7 @@ def main_content() -> rx.Component:
                 width="100%",
                 bg="whitesmoke",
                 style={"input::placeholder": {"color": "#ccc"}},
+                color = "black"
             ),
             rx.cond(
                 State.ImageState.selected_image,
@@ -188,12 +189,6 @@ def main_content() -> rx.Component:
                             image["created_at"],
                             color="black",
                             border="1px solid #C1C1C1",
-                        ),
-                        bg=rx.cond(
-                            State.ImageState.selected_image.is_not_none()
-                            & (State.ImageState.selected_image["stt"] == image["stt"]),
-                            "var(--accent-2)",
-                            "transparent",
                         ),
                     ),
                 )

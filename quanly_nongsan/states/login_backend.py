@@ -143,7 +143,7 @@ class State(rx.State):
             rx.call_script('document.cookie = "auth_user=; Max-Age=0; Path=/";'),
             rx.redirect("/login_page"),
         ]
-        
+
     def redirect_if_logged_in(self):
         """
         Kiểm tra state hiện tại, nếu người dùng đã đăng nhập (current_user có dữ liệu),
@@ -225,7 +225,14 @@ class State(rx.State):
                     self.new_password = ""
                     self.confirm_new_password = ""
 
-                    return rx.window_alert("Đổi mật khẩu thành công!")
+                    logout_events = self.handle_logout()
+
+                    # 2. Tạo một danh sách sự kiện mới, bắt đầu bằng thông báo thành công
+                    events = [rx.window_alert("Đổi mật khẩu thành công!")]
+
+                    # 3. Nối danh sách sự kiện logout vào danh sách hiện tại
+                    events.extend(logout_events)
+                    return events
                 else:
                     return rx.window_alert("Mật khẩu hiện tại không đúng.")
 
