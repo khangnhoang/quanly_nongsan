@@ -9,15 +9,9 @@ CONNECTION_STRING = os.getenv("DATABASE_URL")
 
 
 class MainPageState(rx.State):
-    """State quản lý dữ liệu cho trang chính."""
 
-    # Biến để lưu danh sách các loại sản phẩm cùng với ảnh
-    # Cấu trúc: [{"name": "Tên Loại", "image_url": "/url/anh.jpg"}, ...]
     product_types_with_images: list[dict] = []
-
-    # --- BẮT ĐẦU PHẦN MỚI ---
-    # Biến state để lưu danh sách sản phẩm
-    # Cấu trúc: [{"name": "Tên SP", "price": "Giá", "image_url": "/url/anh.jpg"}, ...]
+    recently_purchased_products: list[dict] = []
     products: list[dict] = []
     LoginState = LoginState
 
@@ -172,3 +166,51 @@ class MainPageState(rx.State):
 
         except Exception as e:
             print(f"Lỗi khi tải loại sản phẩm: {e}")
+
+    async def load_recently_purchased_products(self):
+        # Lấy User ID từ Login State
+        user_id_obj = await self.get_state(self.LoginState)
+        user_id = user_id_obj.current_user.get("id")
+
+        if not user_id:
+            self.recently_purchased_products = []
+            print("Người dùng chưa đăng nhập, không tải lịch sử mua hàng.")
+            return
+
+        temp_list = []
+        try:
+            with pyodbc.connect(CONNECTION_STRING) as conn:
+                cursor = conn.cursor()
+
+                # TRUY VẤN CÁC SẢN PHẨM ĐÃ TỪNG MUA (DISTINCT)
+                cursor.execute(
+                    """
+                    SELECT DISTINCT 
+                        p.ID, 
+                        p.Name, 
+                        p.Price, 
+                        i.ImageURL
+                    FROM Orders o
+                    JOIN OrderItems oi ON o.ID = oi.OrderID
+                    JOIN Products p ON oi.ProductID = p.ID
+                    LEFT JOIN Images i ON p.PrimaryImageID = i.STT
+                    WHERE o.UserID = ?
+                    ORDER BY p.ID DESC
+                    """,
+                    (user_id,)
+                )
+                
+                for row in cursor.fetchall():
+                    temp_list.append({
+                        "id": row.ID,
+                        "name": row.Name,
+                        "price": f"{int(row.Price):,} đ".replace(",", "."),
+                        "image_url": row.ImageURL or "/no-image.png",
+                        "product_id": row.ID
+                    })
+
+            self.recently_purchased_products = temp_list
+            print(f"Đã tải {len(temp_list)} sản phẩm đã mua.")
+        except Exception as e:
+            print(f"Lỗi khi tải sản phẩm đã mua: {e}")
+            self.recently_purchased_products = []
