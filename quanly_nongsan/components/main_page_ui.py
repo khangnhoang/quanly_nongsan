@@ -4,6 +4,39 @@ from .main_page_and_cart_header import header
 # Import State của bạn
 from ..state import State
 
+purchased_products = [
+    {
+        "name": "Áo thun trắng",
+        "price": "150.000₫",
+        "image": "/duachuot.jpg",
+    },
+    {
+        "name": "Quần jean xanh",
+        "price": "300.000₫",
+        "image": "/duachuot.jpg",
+    },
+    {
+        "name": "Giày sneaker",
+        "price": "800.000₫",
+        "image": "/duachuot.jpg",
+    },
+    {
+        "name": "Balo du lịch",
+        "price": "500.000₫",
+        "image": "/duachuot.jpg",
+    },
+    {
+        "name": "Mũ lưỡi trai",
+        "price": "100.000₫",
+        "image": "/duachuot.jpg",
+    },
+    {
+        "name": "Mũ lưỡi xoai",
+        "price": "100.000₫",
+        "image": "/duachuot.jpg",
+    },
+]
+
 
 def product_type_item(item: rx.Var[dict]) -> rx.Component:
     """
@@ -99,6 +132,60 @@ def product_item(product: rx.Var[dict]) -> rx.Component:
     )
 
 
+def product_buyed(product):
+    return rx.box(
+        rx.image(
+            src=product["image"],
+            width="100%",
+            height="100px",
+            object_fit="cover",
+            border_radius="md",
+        ),
+        rx.text(product["name"]),
+        rx.text(product["price"], color = "red"),
+        rx.button("Mua", width="100%", bg="#F0FFF3", color="#0090FF", margin_top = "4px", cursor = "pointer"),
+        height="200px",
+        padding="8px",
+        bg="white",
+        border="1px solid #eee",
+        border_radius="4px",
+        align_items="start",
+        width="100%",
+        padding_top="8px",
+    )
+
+
+def purchased_slider():
+    return rx.vstack(
+        rx.hstack(
+            rx.heading("Sản phẩm từng mua", size="5", color="#2287DF"),
+            border="1px solid #eee",
+            border_radius="4px",
+            width="30%",
+            height="35px",
+            align_items="center",
+            justify="center",
+            bg="#FFFFFF",
+            pading="4px",
+        ),
+        rx.hstack(
+            *[product_buyed(p) for p in purchased_products[:6]],
+            overflow_x="auto",
+            padding="10px",
+            spacing="4",
+            width="100%",
+            justify="center",
+            align_items="center",
+        ),
+        align_items="center",
+        color="black",
+        width="100%",
+        bg="#519CE3",
+        padding="8px",
+        margin_bottom="4px",
+    )
+
+
 def content() -> rx.Component:
     return rx.vstack(
         rx.vstack(
@@ -130,6 +217,7 @@ def content() -> rx.Component:
         align_items="center",
         width="100%",
         padding_x="3%",
+        margin_top = "8px",
     )
 
 
@@ -307,6 +395,7 @@ def index() -> rx.Component:
             gap="20px",
             height="100%",
         ),
+        purchased_slider(),
         content(),
         footer(),
         footer_end(),
