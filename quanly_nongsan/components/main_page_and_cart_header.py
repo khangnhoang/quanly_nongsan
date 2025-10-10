@@ -36,6 +36,14 @@ def header() -> rx.Component:
                     ),
                     href="/cart",  # Link tới giỏ hàng
                 ),
+                rx.link(
+                    rx.vstack(
+                        rx.icon(tag="history"),
+                        rx.text("Lịch sử đơn hàng"),
+                        color = "white",
+                    ),
+                    href="/order_history"
+                ),
                 rx.cond(
                 MainPageState.LoginState.current_user,
                 # Nếu ĐÃ đăng nhập (current_user không rỗng)

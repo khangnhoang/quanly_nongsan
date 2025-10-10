@@ -172,17 +172,14 @@ class MainPageState(rx.State):
         user_id_obj = await self.get_state(self.LoginState)
         user_id = user_id_obj.current_user.get("id")
 
+        # Không log, không clear list, chỉ bỏ qua nếu chưa có user
         if not user_id:
-            self.recently_purchased_products = []
-            print("Người dùng chưa đăng nhập, không tải lịch sử mua hàng.")
             return
 
         temp_list = []
         try:
             with pyodbc.connect(CONNECTION_STRING) as conn:
                 cursor = conn.cursor()
-
-                # TRUY VẤN CÁC SẢN PHẨM ĐÃ TỪNG MUA (DISTINCT)
                 cursor.execute(
                     """
                     SELECT DISTINCT 
@@ -199,7 +196,6 @@ class MainPageState(rx.State):
                     """,
                     (user_id,)
                 )
-                
                 for row in cursor.fetchall():
                     temp_list.append({
                         "id": row.ID,
@@ -210,7 +206,7 @@ class MainPageState(rx.State):
                     })
 
             self.recently_purchased_products = temp_list
-            print(f"Đã tải {len(temp_list)} sản phẩm đã mua.")
         except Exception as e:
             print(f"Lỗi khi tải sản phẩm đã mua: {e}")
-            self.recently_purchased_products = []
+            # Không clear list trong trường hợp lỗi, để tránh mất dữ liệu đang hiển thị
+            # self.recently_purchased_products = []
