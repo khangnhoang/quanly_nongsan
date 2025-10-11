@@ -6,7 +6,6 @@ from ..states.order_history_backend import (
 )  # <-- import Order trực tiếp
 from ..states.login_backend import State as LoginState
 
-
 def _status_badge(text: str, color: str) -> rx.Component:
     return rx.box(
         rx.text(text, color=color, font_weight="bold", size="2"),
@@ -26,7 +25,7 @@ def _order_card(
         # Header: mã đơn + link + trạng thái (màu)
         rx.hstack(
             rx.text(f"Đơn hàng #{order.id}", font_weight="bold"),
-            rx.link("Xem chi tiết >", href=f"/order/{order.id}", color="black"),
+            rx.link("Xem chi tiết >", href=f"/product_detail?order_id={order.id}", color="black"),
             justify="between",
             align="center",
             width="100%",
@@ -106,7 +105,6 @@ def order_history_empty() -> rx.Component:
         width="100%",
         padding_x="3%",
     )
-
 
 def order_history_list() -> rx.Component:
     return rx.center(
