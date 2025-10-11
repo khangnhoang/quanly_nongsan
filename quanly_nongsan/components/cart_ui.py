@@ -1,209 +1,193 @@
-# cart_ui.py - THAY THẾ TOÀN BỘ HÀM cart_item() và thêm import cần thiết
-
 import reflex as rx
 from .main_page_and_cart_header import header
-from ..states.cart_backend import CartState
-from ..state import State
+from ..states.state import State # Sử dụng base State để truy cập CartState
 
-
+# Component khi giỏ hàng trống
 def cart_no_item() -> rx.Component:
-    # (Giữ nguyên cart_no_item)
     return rx.center(
         rx.vstack(
-            rx.heading("Giỏ hàng của Bạn", size="3"),
-            rx.vstack(rx.image(src="/cart.jpg", width="300px")),
+            rx.heading("Giỏ hàng của bạn đang trống", size="5", color_scheme="gray", color = "black"),
+            rx.image(src="/cart.jpg", width="300px", margin_y="20px"),
             rx.link(
-                rx.button("Tiếp tục mua hàng", color="white", bg="green", size="3"),
+                rx.button("Tiếp tục mua hàng", color_scheme="grass", size="3"),
                 href="/",
             ),
             align_items="center",
             color="black",
             width="100%",
-            margin_top="2%",
         ),
         width="100%",
-        padding_x="3%",
+        height="calc(100vh - 80px)",  # Co giãn theo cha (trừ header)
     )
 
-
-def cart_item() -> rx.Component:
+# Component khi giỏ hàng có sản phẩm
+def cart_with_items() -> rx.Component:
     def row_view(it: dict):
-        # Giữ nguyên cấu trúc row_view
         return rx.hstack(
+            rx.image(
+                src=it["image_url"],
+                width="60px",
+                height="60px",
+                object_fit="cover",
+                border_radius="md",
+            ),
             rx.vstack(
-                rx.image(src=it["image_url"], width="50px"),
+                rx.text(
+                    it["name"], weight="bold", color="black"
+                ),  # Đảm bảo tên sản phẩm màu đen
                 rx.link(
                     "Xóa",
                     on_click=State.CartState.delete_item(it["cart_item_id"]),
-                    style={"cursor": "pointer", "textDecoration": "underline"},
+                    size="1",
+                    color_scheme="red",
+                    cursor="pointer",
                 ),
+                align_items="start",
+                width="40%",
             ),
-            rx.text(it["name"]),
-            rx.vstack(
-                rx.text(f"{it['price']:,} đ".replace(",", ".")),
-                rx.hstack(
-                    rx.button(
-                        "-",
-                        on_click=State.CartState.decrement_item(it["cart_item_id"]),
-                        color="#0069D1",
-                        bg="#E4E9F2",
-                    ),
-                    rx.text(it["quantity"]),
-                    rx.button(
-                        "+",
-                        on_click=State.CartState.increment_item(it["cart_item_id"]),
-                        color="#0069D1",
-                        bg="#E4E9F2",
-                    ),
-                    border="0.5px solid #E4E9F2",
-                    border_radius="4px",
-                    padding_x="6px",
+            rx.text(f"{it['price']:,} đ".replace(",", "."), color="black"),
+            rx.hstack(
+                rx.button(
+                    "-",
+                    on_click=State.CartState.decrement_item(it["cart_item_id"]),
+                    size="1",
+                    cursor="pointer",
                 ),
+                rx.text(it["quantity"], margin_x="10px", weight="bold", color="black"),
+                rx.button(
+                    "+",
+                    on_click=State.CartState.increment_item(it["cart_item_id"]),
+                    size="1",
+                    cursor="pointer",
+                ),
+                align_items="center",
             ),
-            rx.text(f"{it['line_total']:,} đ".replace(",", ".")),
+            rx.text(
+                f"{it['line_total']:,} đ".replace(",", "."),
+                weight="bold",
+                color_scheme="ruby",
+            ),
             justify="between",
             align_items="center",
             width="100%",
-            padding="4px",
+            padding_y="10px",
+            border_bottom="1px solid #eee",
         )
 
     return rx.center(
-        rx.vstack(
+        rx.hstack(
+            # Cột trái chứa danh sách sản phẩm
             rx.vstack(
-                rx.heading("Giỏ hàng", size="3"),
-                width="100%",
-                align_items="center",
-                bg="white",
-                padding="4px",
-            ),
-            # >>> KHỐI HIỂN THỊ THÔNG TIN USER TỪ DB (NEW) <<<
-            rx.vstack(
-                rx.heading(
-                    "Thông tin giao hàng",
-                    size="4",
-                    font_weight="bold",
-                    margin_top="10px",
-                ),
-                # Họ tên
-                rx.hstack(
-                    rx.text("Người nhận:"),
-                    rx.text(State.CartState.user_full_name, font_weight="bold"),
-                    justify="start",
-                    width="100%",
-                ),
-                # SĐT
-                rx.hstack(
-                    rx.text("Điện thoại:"),
-                    rx.text(State.CartState.user_phone, font_weight="bold"),
-                    justify="start",
-                    width="100%",
-                ),
-                # Địa chỉ
-                rx.hstack(
-                    rx.text("Địa chỉ:"),
-                    rx.text(
-                        State.CartState.user_address, font_weight="bold", color="blue"
-                    ),
-                    justify="start",
-                    width="100%",
-                    align_items="start",
-                ),
-                rx.text(
-                    "Để thay đổi thông tin này, vui lòng vào trang hồ sơ.",
-                    size="1",
-                    color="gray",
-                ),
-                width="100%",
-                padding="10px",
-                spacing="2",
-                bg="#f9f9f9",
-                border_radius="4px",
-                border="1px solid #ddd",
-                margin_top="10px",
-            ),
-            # ----------------------------------------------
-            # KHỐI DANH SÁCH SẢN PHẨM
-            rx.vstack(
-                rx.text("Đơn hàng có sẵn, giao ngay", size="2", font_weight="bold"),
+                rx.heading("Đơn hàng của bạn", size="5", color="black"),
+                rx.divider(),
                 rx.foreach(State.CartState.items, row_view),
-                width="100%",
-                bg="white",
-                border_radius="4px",
+                width="60%",
+                padding="20px",
                 border="1px solid #eee",
-                padding="4px",
-                margin_top="10px",
+                border_radius="md",
+                spacing="4",
+                max_height="65vh",  # Giới hạn chiều cao tối đa
+                overflow_y="auto",  # Tự động thêm thanh cuộn dọc
+                bg="white",
             ),
-            # KHỐI NÚT ĐẶT HÀNG VÀ TỔNG TIỀN (Sử dụng rx.form để kích hoạt place_order)
-            rx.form(
+            # Cột phải: Thông tin giao hàng và thanh toán
+            rx.vstack(
+                rx.heading("Thông tin giao hàng", size="5", color="black"),
+                rx.divider(),
                 rx.vstack(
-                    rx.text("Thông tin thanh toán", size="2", font_weight="bold"),
-                    # Tổng tiền hàng
-                    rx.vstack(
-                        rx.hstack(
-                            rx.text("Tổng tiền hàng"),
-                            rx.text(f"{State.CartState.total:,} đ".replace(",", ".")),
-                            width="100%",
-                            justify="between",
-                        ),
-                        width="100%",
-                        padding="4px",
-                        border_bottom="1px solid #eee",
-                    ),
-                    # Hàng nút hành động
                     rx.hstack(
-                        rx.button(
-                            "Xóa hết giỏ hàng",
-                            on_click=State.CartState.clear_cart,
-                            variant="surface",
-                            color_scheme="red",
-                            type_="button",
-                            cursor="pointer",
+                        rx.text("Người nhận:", width="80px", color="black"),
+                        rx.text(
+                            State.CartState.user_full_name, weight="bold", color="black"
                         ),
-                        rx.spacer(),
-                        rx.button(
-                            rx.icon(tag="store"),
-                            rx.text("Đặt hàng"),
-                            rx.text(f"{State.CartState.total:,} đ".replace(",", ".")),
-                            padding="8px",
-                            bg="green",
-                            color="white",
-                            type_="submit",
-                            is_loading=State.CartState.is_loading,
-                            cursor="pointer",
-                        ),
-                        width="100%",
-                        margin_top="10px",
                     ),
+                    rx.hstack(
+                        rx.text("Điện thoại:", width="80px", color="black"),
+                        rx.text(
+                            State.CartState.user_phone, weight="bold", color="black"
+                        ),
+                    ),
+                    rx.hstack(
+                        rx.text("Địa chỉ:", width="80px", color="black"),
+                        rx.text(
+                            State.CartState.user_address, weight="bold", color="black"
+                        ),
+                    ),
+                    rx.text(
+                        "Để thay đổi, vui lòng vào trang hồ sơ.",
+                        size="1",
+                        color_scheme="gray",
+                    ),
+                    align_items="start",
+                    spacing="2",
                     width="100%",
-                    bg="white",
-                    border_radius="4px",
-                    padding_x="10px",
-                    border="1px solid #eee",
-                    margin_top="10px",
                 ),
-                on_submit=State.CartState.place_order,  # Xử lý đặt hàng
-                width="100%",
+                rx.spacer(),
+                rx.divider(),
+                rx.hstack(
+                    rx.text("Tổng tiền:", size="4", weight="bold", color="black"),
+                    rx.text(
+                        f"{State.CartState.total:,} đ".replace(",", "."),
+                        size="6",
+                        weight="bold",
+                        color_scheme="ruby",
+                    ),
+                    justify="between",
+                    width="100%",
+                    align_items="center",
+                ),
+                rx.button(
+                    "Đặt hàng ngay",
+                    on_click=State.CartState.place_order,
+                    is_loading=State.CartState.is_loading,
+                    width="100%",
+                    size="3",
+                    color_scheme="grass",
+                    cursor="pointer",
+                ),
+                rx.button(
+                    "Xóa hết giỏ hàng",
+                    on_click=State.CartState.clear_cart,
+                    variant="soft",
+                    color_scheme="red",
+                    width="100%",
+                    cursor="pointer",
+                ),
+                width="35%",
+                height="100%",
+                padding="20px",
+                border="1px solid #eee",
+                border_radius="md",
+                spacing="4",
+                bg="white",
             ),
-            # Kích thước khung ngoài
-            bg="#F2F5F9",
-            padding_x="1%",
-            align_items="center",
-            width="50%",
+            spacing="6",
+            width="100%",
+            max_width="1200px",
+            align_items="start",
+            padding_y="20px",
         ),
-        color="black",
-        align_items="center",
         width="100%",
-        margin_top="0.5%",
     )
 
-
+# Hàm index chính của trang
 def index() -> rx.Component:
     return rx.vstack(
+        # Header cố định ở trên
         header(),
-        rx.cond(State.CartState.has_items, cart_item(), cart_no_item()),
-        bg="#F5F5F5",
+        # Nội dung chính
+        rx.box(
+            rx.cond(State.CartState.has_items, cart_with_items(), cart_no_item()),
+            flex_grow=1,
+            width="100%",
+            overflow_y="auto",
+            background="#F9FAFB",
+        ),
+        # Style cho container cha ngoài cùng
         gap="0",
+        spacing="0",
         width="100%",
         height="100vh",
-        on_mount= [State.LoginState.try_auto_login, State.CartState.load_cart]
+        align_items="stretch",
+        on_mount=[State.LoginState.try_auto_login, State.CartState.load_cart],
     )
