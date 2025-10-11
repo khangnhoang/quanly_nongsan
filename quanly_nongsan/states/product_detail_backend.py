@@ -3,7 +3,7 @@ import reflex as rx
 import pyodbc
 import os
 from dotenv import load_dotenv
-from .cart_backend import CartState # <-- THÊM IMPORT NÀY
+from .cart_backend import CartState
 
 load_dotenv()
 CONNECTION_STRING = os.getenv("DATABASE_URL")
@@ -11,7 +11,7 @@ CONNECTION_STRING = os.getenv("DATABASE_URL")
 
 class OrderItem(rx.Base):
     """Định nghĩa cấu trúc cho một sản phẩm trong đơn hàng chi tiết."""
-    product_id: int # <-- THÊM TRƯỜNG NÀY (ĐÃ CÓ TRONG FILE GỐC)
+    product_id: int
     product_name: str
     image_url: str
     quantity: int
@@ -28,7 +28,10 @@ class ProductDetailState(rx.State):
     async def load_order_details(self):
         """Tải chi tiết các sản phẩm của một đơn hàng dựa vào order_id từ URL."""
         self.is_loading = True
-        self.order_id = self.router.page.params.get("order_id", "")
+        
+        # <<< THAY ĐỔI Ở ĐÂY: Sửa .router.page.params thành .router.params
+        self.order_id = self.router.params.get("order_id", "")
+        
         if not self.order_id:
             print("Không tìm thấy order_id trong URL.")
             self.is_loading = False
@@ -50,11 +53,7 @@ class ProductDetailState(rx.State):
                 cursor.execute(
                     """
                     SELECT 
-                        p.ID,  -- <-- THÊM p.ID VÀO ĐÂY (ĐÃ CÓ TRONG FILE GỐC)
-                        p.Name, 
-                        i.ImageURL, 
-                        oi.Quantity, 
-                        p.Price
+                        p.ID, p.Name, i.ImageURL, oi.Quantity, p.Price
                     FROM OrderItems oi
                     JOIN Products p ON oi.ProductID = p.ID
                     LEFT JOIN Images i ON p.PrimaryImageID = i.STT
@@ -68,7 +67,7 @@ class ProductDetailState(rx.State):
                     total_price += item.Quantity * item.Price
                     temp_items.append(
                         OrderItem(
-                            product_id=item.ID, # <-- LƯU PRODUCT ID VÀO MODEL (ĐÃ CÓ TRONG FILE GỐC)
+                            product_id=item.ID,
                             product_name=item.Name,
                             image_url=item.ImageURL or "/no-image.png",
                             quantity=item.Quantity,
@@ -87,14 +86,12 @@ class ProductDetailState(rx.State):
     def reorder_from_detail(self):
         """Chức năng 'Mua lại' trên trang chi tiết: thêm tất cả sản phẩm vào giỏ hàng."""
         
-        # Tạo danh sách các cặp (product_id, quantity)
         items_to_reorder = [
             (item.product_id, item.quantity) for item in self.order_items
         ]
         
         return [
-            # Gọi hàm mới trong CartState (giả định đã được triển khai)
             CartState.add_multiple_items_to_cart(items_to_reorder),
-            rx.window_alert(f"Đang thêm {len(items_to_reorder)} sản phẩm vào giỏ hàng..."),
+            rx.window_alert(f"Đã thêm {len(items_to_reorder)} sản phẩm vào giỏ hàng."),
             rx.redirect("/cart")
         ]
