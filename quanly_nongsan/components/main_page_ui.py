@@ -1,34 +1,80 @@
 import reflex as rx
 from .main_page_and_cart_header import header
 
-# Import State của bạn
+# Import State của bạn (GIỮ NGUYÊN)
 from ..states.state import State
+
+
+# --- PHẦN MỚI: HÀM TẠO GIAO DIỆN CHO MODAL TĨNH (ĐÃ SỬA LỖI) ---
+def static_add_to_cart_modal_content() -> rx.Component:
+    """
+    Hàm này tạo ra NỘI DUNG TĨNH cho modal.
+    Nó sẽ được kích hoạt bởi nút "Thêm vào giỏ hàng".
+    """
+    # SỬA LỖI: Bỏ `children=[...]` và truyền `rx.vstack` trực tiếp
+    return rx.dialog.content(
+        rx.vstack(
+            rx.hstack(
+                rx.image(
+                    src="https://salt.tikicdn.com/cache/280x280/ts/product/d9/38/6b/ca8dfa7a672f773d578c25b39918bd9d.jpg",
+                    width="100px", height="100px", border="1px solid #eee", border_radius="8px",
+                ),
+                rx.vstack(
+                    rx.heading("Sườn que heo nhập khẩu 500g", size="4"),
+                    rx.hstack(
+                        rx.text("34.000đ", color="red", weight="bold", size="5"),
+                        rx.text("42.000đ", as_="s", color="#888", size="3"),
+                        align="center",
+                    ),
+                    align="start",
+                ),
+                align="center", spacing="4", width="100%",
+            ),
+            rx.dialog.close(
+                rx.icon(tag="x"),
+                style={"position": "absolute", "top": "16px", "right": "16px", "cursor": "pointer"}
+            ),
+            rx.hstack(
+                rx.button("-", size="2", variant="outline"),
+                rx.input(placeholder="1", width="70px", text_align="center", size="2"),
+                rx.button("+", size="2", variant="outline"),
+                justify="center", width="100%", padding_y="20px",
+            ),
+            rx.button(
+                "HOÀN TẤT", width="100%", size="3",
+                style={"background_color": "#FF424E", "color": "white", "cursor": "pointer"},
+            ),
+            spacing="4", width="100%",
+        ),
+        style={"max_width": "500px", "padding": "24px"},
+    )
+# --- KẾT THÚC PHẦN MỚI ---
 
 
 def product_type_item(item: rx.Var[dict]) -> rx.Component:
     """
     Component để hiển thị một loại sản phẩm duy nhất.
-    Nhận vào một item từ danh sách state.
+    (KHÔNG THAY ĐỔI)
     """
     return rx.link(
         rx.vstack(
             rx.image(
-                src=item["image_url"],  # Lấy URL ảnh từ state
+                src=item["image_url"],
                 width="70%",
                 height="50%",
                 max_height="152px",
-                aspect_ratio="1 / 1",  # Giúp ảnh vuông vắn hơn
+                aspect_ratio="1 / 1",
             ),
-            rx.text(item["name"]),  # Lấy tên loại sản phẩm từ state
+            rx.text(item["name"]),
             align_items="center",
         ),
-        width="30%",  # Giữ nguyên layout 3 cột của bạn
-        href="#",  # Thêm đường dẫn sau này
+        width="30%",
+        href="#",
     )
 
 
 def navigation() -> rx.Component:
-    """Component cho thanh điều hướng."""
+    """Component cho thanh điều hướng. (KHÔNG THAY ĐỔI)"""
     return rx.hstack(
         rx.hstack(
             rx.hstack(
@@ -58,13 +104,9 @@ def navigation() -> rx.Component:
     )
 
 
-# --- PHẦN ĐƯỢC SỬA LẠI ---
-
-
 def product_item(product: rx.Var[dict]) -> rx.Component:
     """Component để hiển thị một item sản phẩm duy nhất."""
     return rx.vstack(
-        # Link bọc toàn bộ sản phẩm, khi click sẽ đi đến trang chi tiết
         rx.link(
             rx.image(
                 src=product["image_url"],
@@ -80,59 +122,21 @@ def product_item(product: rx.Var[dict]) -> rx.Component:
                 width="100%",
                 padding="8px",
             ),
-            href="#",  # Link chi tiết sản phẩm
-        ),
-        # Nút thêm vào giỏ hàng
-        rx.button(
-            "Thêm vào giỏ hàng",
-            on_click=State.MainPageState.check_login_and_add_to_cart(product),
-            width="100%",
-            margin_top="auto",  # Đẩy nút xuống dưới cùng
-            cursor="pointer",
-        ),
-        bg="#FFFFFF",
-        border="1px solid #eee",
-        border_radius="5px",
-        overflow="hidden",
-        _hover={"box_shadow": "0px 4px 10px rgba(0, 0, 0, 0.1)"},
-        height="100%",  # Đảm bảo các card có chiều cao bằng nhau
-    )
-
-
-def product_buyed(product: rx.Var[dict]):
-    """
-    Component để hiển thị một sản phẩm đã từng mua.
-    (Tăng kích thước ảnh để khớp với product_item)
-    """
-    return rx.vstack(
-        # Link bọc toàn bộ sản phẩm
-        rx.link(
-            rx.image(
-                src=product["image_url"],
-                width="100%",
-                # Sửa: Tăng chiều cao ảnh, đảm bảo tỷ lệ 1/1
-                aspect_ratio="1 / 1",
-                object_fit="cover",
-            ),
-            rx.vstack(
-                # Sửa: Dùng size 2 và font_weight bold như product_item
-                rx.text(product["name"], color="black", font_weight="bold", size="2"),
-                # Sửa: Dùng size 3 như product_item
-                rx.text(product["price"], color="red", size="3"),
-                align_items="start",
-                spacing="1",
-                width="100%",
-                padding="8px",  # Dùng padding 8px như product_item
-            ),
             href="#",
         ),
-        # Nút Mua lại (Thêm vào giỏ hàng) - ĐÃ CÓ CHỨC NĂNG
-        rx.button(
-            "Mua lại",
-            on_click=State.MainPageState.check_login_and_add_to_cart(product),
-            width="100%",
-            margin_top="auto",
-            cursor="pointer",
+        # --- SỬA ĐỔI ---
+        # Thay thế nút cũ bằng một Dialog có Trigger để mở modal tĩnh.
+        rx.dialog.root(
+            rx.dialog.trigger(
+                rx.button(
+                    "Thêm vào giỏ hàng",
+                    # on_click đã được loại bỏ để trigger xử lý
+                    width="100%",
+                    margin_top="auto",
+                    cursor="pointer",
+                )
+            ),
+            static_add_to_cart_modal_content(),
         ),
         bg="#FFFFFF",
         border="1px solid #eee",
@@ -142,15 +146,54 @@ def product_buyed(product: rx.Var[dict]):
         height="100%",
     )
 
-# File: main_page_ui.py
 
-# ... (Các hàm khác giữ nguyên)
+def product_buyed(product: rx.Var[dict]):
+    """
+    Component để hiển thị một sản phẩm đã từng mua.
+    """
+    return rx.vstack(
+        rx.link(
+            rx.image(
+                src=product["image_url"],
+                width="100%",
+                aspect_ratio="1 / 1",
+                object_fit="cover",
+            ),
+            rx.vstack(
+                rx.text(product["name"], color="black", font_weight="bold", size="2"),
+                rx.text(product["price"], color="red", size="3"),
+                align_items="start",
+                spacing="1",
+                width="100%",
+                padding="8px",
+            ),
+            href="#",
+        ),
+        # --- SỬA ĐỔI ---
+        # Tương tự như trên, thay nút cũ bằng Dialog Trigger.
+        rx.dialog.root(
+            rx.dialog.trigger(
+                rx.button(
+                    "Mua lại",
+                    # on_click đã được loại bỏ để trigger xử lý
+                    width="100%",
+                    margin_top="auto",
+                    cursor="pointer",
+                )
+            ),
+            static_add_to_cart_modal_content(),
+        ),
+        bg="#FFFFFF",
+        border="1px solid #eee",
+        border_radius="5px",
+        overflow="hidden",
+        _hover={"box_shadow": "0px 4px 10px rgba(0, 0, 0, 0.1)"},
+        height="100%",
+    )
+
 
 def purchased_slider():
-    """
-    Component hiển thị các sản phẩm đã từng mua dưới dạng lưới (grid) 6 cột,
-    cuộn dọc (mặc định) và loại bỏ thanh cuộn ngang không cần thiết.
-    """
+    """Component hiển thị các sản phẩm đã từng mua. (KHÔNG THAY ĐỔI)"""
     return rx.cond(
         State.MainPageState.recently_purchased_products.length() > 0,
         rx.vstack(
@@ -165,22 +208,18 @@ def purchased_slider():
                 bg="#FFFFFF",
                 padding="4px",
             ),
-            # SỬA ĐỔI LỚN: Thay thế rx.box cuộn ngang bằng rx.vstack
             rx.vstack( 
                 rx.grid(
                     rx.foreach(
                         State.MainPageState.recently_purchased_products,
                         product_buyed,
                     ),
-                    # Đặt cố định 6 cột, giúp sản phẩm không tràn ra ngoài
                     grid_template_columns="repeat(6, 1fr)",
-                    # Xóa width tính toán (grid_width)
                     gap="16px",
                     padding="10px",
-                    width="100%", # Đảm bảo grid chiếm hết chiều rộng
+                    width="100%",
                     justify="start",
                 ),
-                # Xóa overflow_x="auto"
                 width="100%",
             ),
             align_items="center",
@@ -192,9 +231,9 @@ def purchased_slider():
         ),
     )
 
-# ... (Phần còn lại của file giữ nguyên)
 
 def content() -> rx.Component:
+    """Phần nội dung chính. (KHÔNG THAY ĐỔI)"""
     return rx.vstack(
         rx.vstack(
             rx.hstack(
@@ -213,7 +252,6 @@ def content() -> rx.Component:
                 border_bottom="3px solid #007CBA",
                 border_radius="0",
             ),
-            # Dùng rx.foreach để lặp qua danh sách sản phẩm từ state
             rx.grid(
                 rx.foreach(State.MainPageState.products, product_item),
                 grid_template_columns="repeat(6, 1fr)",
@@ -229,11 +267,8 @@ def content() -> rx.Component:
     )
 
 
-# --- KẾT THÚC PHẦN SỬA ---
-
-
 def footer():
-    # ... (Nội dung hàm footer giữ nguyên)
+    """Phần footer. (KHÔNG THAY ĐỔI)"""
     return rx.vstack(
         rx.box(
             border="1px solid #eee",
@@ -371,7 +406,7 @@ def footer():
 
 
 def footer_end():
-    # ... (Nội dung hàm footer_end giữ nguyên)
+    """Phần cuối footer. (KHÔNG THAY ĐỔI)"""
     return (
         rx.box(
             rx.text("Copyright 2025 © TheGioiNongSan.Com", font_size="14px"),
@@ -386,7 +421,7 @@ def footer_end():
 
 
 def index() -> rx.Component:
-    """Hàm dựng giao diện chính của trang chủ."""
+    """Hàm dựng giao diện chính của trang chủ. (KHÔNG THAY ĐỔI)"""
     return rx.vstack(
         header(),
         rx.box(border="0.5px solid whitesmoke", width="100%"),
@@ -409,7 +444,6 @@ def index() -> rx.Component:
         footer_end(),
         bg="#F5F5F5",
         gap="0",
-        # --- DÒNG SỬA ---
         on_mount=[
             State.LoginState.try_auto_login,
             State.MainPageState.load_product_types,
