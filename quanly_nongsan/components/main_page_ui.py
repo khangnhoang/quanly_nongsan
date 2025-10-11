@@ -5,25 +5,28 @@ from .main_page_and_cart_header import header
 from ..states.state import State
 
 
-# --- PHẦN MỚI: HÀM TẠO GIAO DIỆN CHO MODAL TĨNH (ĐÃ SỬA LỖI) ---
-def static_add_to_cart_modal_content() -> rx.Component:
+# --- PHẦN MỚI: HÀM TẠO GIAO DIỆN CHO MODAL ĐỘNG (Dựa trên thiết kế cũ) ---
+def add_to_cart_modal_content() -> rx.Component:
     """
-    Hàm này tạo ra NỘI DUNG TĨNH cho modal.
-    Nó sẽ được kích hoạt bởi nút "Thêm vào giỏ hàng".
+    Hàm này tạo ra NỘI DUNG ĐỘNG cho modal, có form nhập số lượng.
+    Dữ liệu sản phẩm lấy từ State.MainPageState.selected_product_for_cart
     """
-    # SỬA LỖI: Bỏ `children=[...]` và truyền `rx.vstack` trực tiếp
+    # Lấy thông tin sản phẩm và số lượng từ State
+    product = State.MainPageState.selected_product_for_cart
+    quantity = State.MainPageState.quantity_to_add
+    
     return rx.dialog.content(
         rx.vstack(
             rx.hstack(
                 rx.image(
-                    src="https://salt.tikicdn.com/cache/280x280/ts/product/d9/38/6b/ca8dfa7a672f773d578c25b39918bd9d.jpg",
+                    src=product["image_url"], # Dùng data từ State
                     width="100px", height="100px", border="1px solid #eee", border_radius="8px",
                 ),
                 rx.vstack(
-                    rx.heading("Sườn que heo nhập khẩu 500g", size="4"),
+                    rx.heading(product["name"], size="4"), # Dùng data từ State
                     rx.hstack(
-                        rx.text("34.000đ", color="red", weight="bold", size="5"),
-                        rx.text("42.000đ", as_="s", color="#888", size="3"),
+                        rx.text(product["price"], color="red", weight="bold", size="5"), # Dùng data từ State
+                        rx.text("42.000đ", as_="s", color="#888", size="3"), # Giữ giá khuyến mãi tĩnh
                         align="center",
                     ),
                     align="start",
@@ -32,23 +35,36 @@ def static_add_to_cart_modal_content() -> rx.Component:
             ),
             rx.dialog.close(
                 rx.icon(tag="x"),
+                on_click=State.MainPageState.close_add_to_cart_modal, # Thêm hành động đóng modal và reset state
                 style={"position": "absolute", "top": "16px", "right": "16px", "cursor": "pointer"}
             ),
+            # --- CÁC THÀNH PHẦN NHẬP SỐ LƯỢNG ĐÃ ĐƯỢC LIÊN KẾT VỚI BACKEND ---
             rx.hstack(
-                rx.button("-", size="2", variant="outline"),
-                rx.input(placeholder="1", width="70px", text_align="center", size="2"),
-                rx.button("+", size="2", variant="outline"),
+                rx.button(
+                    "-", size="2", variant="outline", 
+                    on_click=State.MainPageState.decrease_quantity # Giảm số lượng
+                ),
+                rx.input(
+                    value=quantity, # Liên kết với State.MainPageState.quantity_to_add
+                    on_change=State.MainPageState.set_quantity_to_add, # Cập nhật State khi người dùng nhập
+                    width="70px", text_align="center", size="2", type="number", min=1
+                ),
+                rx.button(
+                    "+", size="2", variant="outline",
+                    on_click=State.MainPageState.increase_quantity # Tăng số lượng
+                ),
                 justify="center", width="100%", padding_y="20px",
             ),
             rx.button(
                 "HOÀN TẤT", width="100%", size="3",
+                on_click=State.MainPageState.add_selected_product_to_cart, # Gọi hàm xử lý thêm vào giỏ hàng
                 style={"background_color": "#FF424E", "color": "white", "cursor": "pointer"},
             ),
             spacing="4", width="100%",
         ),
         style={"max_width": "500px", "padding": "24px"},
     )
-# --- KẾT THÚC PHẦN MỚI ---
+# --- KẾT THÚC PHẦN CẬP NHẬT MODAL ---
 
 
 def product_type_item(item: rx.Var[dict]) -> rx.Component:
@@ -124,20 +140,27 @@ def product_item(product: rx.Var[dict]) -> rx.Component:
             ),
             href="#",
         ),
-        # --- SỬA ĐỔI ---
-        # Thay thế nút cũ bằng một Dialog có Trigger để mở modal tĩnh.
+        # --- SỬA LỖI & KÍCH HOẠT MODAL ĐỘNG (Giao diện nút như cũ) ---
         rx.dialog.root(
             rx.dialog.trigger(
                 rx.button(
                     "Thêm vào giỏ hàng",
-                    # on_click đã được loại bỏ để trigger xử lý
+                    # Gắn hành động kiểm tra đăng nhập, lưu sản phẩm và mở modal
+                    on_click=State.MainPageState.check_login_and_add_to_cart(product),
                     width="100%",
                     margin_top="auto",
                     cursor="pointer",
                 )
             ),
-            static_add_to_cart_modal_content(),
+            # Chỉ hiển thị modal khi show_add_to_cart_modal là True
+            rx.cond(
+                State.MainPageState.show_add_to_cart_modal,
+                add_to_cart_modal_content() # Dùng modal động mới
+            ),
+            # Thêm on_open_change để đóng modal khi click ra ngoài hoặc Esc
+            on_open_change=State.MainPageState.set_show_add_to_cart_modal,
         ),
+        # -----------------------------------------------
         bg="#FFFFFF",
         border="1px solid #eee",
         border_radius="5px",
@@ -169,20 +192,27 @@ def product_buyed(product: rx.Var[dict]):
             ),
             href="#",
         ),
-        # --- SỬA ĐỔI ---
-        # Tương tự như trên, thay nút cũ bằng Dialog Trigger.
+        # --- SỬA LỖI & KÍCH HOẠT MODAL ĐỘNG (Giao diện nút như cũ) ---
         rx.dialog.root(
             rx.dialog.trigger(
                 rx.button(
                     "Mua lại",
-                    # on_click đã được loại bỏ để trigger xử lý
+                    # Gắn hành động kiểm tra đăng nhập, lưu sản phẩm và mở modal
+                    on_click=State.MainPageState.check_login_and_add_to_cart(product),
                     width="100%",
                     margin_top="auto",
                     cursor="pointer",
                 )
             ),
-            static_add_to_cart_modal_content(),
+            # Chỉ hiển thị modal khi show_add_to_cart_modal là True
+            rx.cond(
+                State.MainPageState.show_add_to_cart_modal,
+                add_to_cart_modal_content() # Dùng modal động mới
+            ),
+            # Thêm on_open_change để đóng modal khi click ra ngoài hoặc Esc
+            on_open_change=State.MainPageState.set_show_add_to_cart_modal,
         ),
+        # -----------------------------------------------
         bg="#FFFFFF",
         border="1px solid #eee",
         border_radius="5px",
