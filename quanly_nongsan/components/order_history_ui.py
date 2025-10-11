@@ -52,16 +52,21 @@ def _order_card(
             justify="end",
             width="100%",
         ),
-        # Nút mua lại
-        rx.button(
-            "Mua lại",
-            on_click=lambda: OrderHistoryState.reorder(order.id),
-            width="100%",
-            bg="white",
-            border="1px solid #eee",
-            cursor="pointer",
-            color = "black"
+        # Nút mua lại: Dùng rx.link để chuyển hướng đến trang chi tiết
+        rx.link(
+            rx.button(
+                "Mua lại",
+                # on_click được loại bỏ vì đã sử dụng rx.link để chuyển hướng
+                width="100%",
+                bg="white",
+                border="1px solid #eee",
+                cursor="pointer",
+                color = "black"
+            ),
+            href=f"/product_detail?order_id={order.id}",
+            width="100%", # Quan trọng để link bao bọc hết chiều rộng của button
         ),
+        
         border="1px solid #eee",
         width="100%",
         border_radius="8px",

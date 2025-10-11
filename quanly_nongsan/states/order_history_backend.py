@@ -101,4 +101,5 @@ class OrderHistoryState(rx.State):
 
     # Tuỳ chọn: nút "Mua lại"
     def reorder(self, order_id: str):
-        return rx.window_alert(f"Chức năng 'Mua lại' cho đơn #{order_id} sẽ sớm được hỗ trợ.")
+        """Chuyển hướng đến trang chi tiết đơn hàng để thực hiện 'Mua lại' chi tiết hơn."""
+        return rx.redirect(f"/product_detail?order_id={order_id}")
