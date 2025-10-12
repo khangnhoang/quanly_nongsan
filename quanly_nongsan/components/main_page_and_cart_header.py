@@ -4,80 +4,104 @@ from ..states.main_page_backend import MainPageState
 def header() -> rx.Component:
     """Component cho phần header đầu trang."""
     return rx.hstack(
-        rx.hstack(
-            rx.link(
-                rx.hstack(
-                    rx.image(src="/logonongsan.png", width="90px", height="90px"),
-                    rx.center(
-                        rx.text("MyWorldtoFarm.com"),
-                    ),
-                    align_items="center",
-                ),
-                width="30%",
-                href="/",  # Link về trang chủ
-            ),
+        rx.link(
             rx.hstack(
+                rx.image(src="/logonongsan.png", width="90px", height="auto"),
                 rx.center(
-                    rx.input(placeholder="Tìm kiếm", width="100%", height="40px"),
-                    rx.button(rx.icon(tag="search"), height="40px"),
-                    width="60%",
-                    align_items="center",
+                    rx.text("MyWorldtoFarm.com", color="white", weight="bold"),
                 ),
-                width="100%",
                 align_items="center",
             ),
-            rx.hstack(
-                rx.link(
-                    rx.vstack(
-                        rx.icon(tag="shopping-bag"),
-                        rx.text("Cart"),
-                        width="100%",
-                        color="white",
-                    ),
-                    href="/cart",  # Link tới giỏ hàng
-                ),
-                rx.cond(
-                MainPageState.LoginState.current_user,
-                # Nếu ĐÃ đăng nhập (current_user không rỗng)
+            href="/",
+            _hover={"opacity": 0.8},
+            transition="opacity 0.2s ease",
+        ),
+        rx.center(
+            rx.input(placeholder="Tìm kiếm sản phẩm bạn mong muốn...", width="400px", height="40px"),
+            rx.button(rx.icon(tag="search"), height="40px", cursor="pointer"),
+            spacing="0",
+        ),
+        rx.hstack(
+            # <<< THÊM HIỆU ỨNG HOVER
+            rx.link(
                 rx.hstack(
-                     rx.link(
-                        rx.vstack(
+                    rx.icon(tag="shopping-bag"),
+                    rx.text("Cart"),
+                    spacing="2",
+                    align_items="center",
+                ),
+                href="/cart",
+                color="white",
+                _hover={"opacity": 0.8},
+                transition="opacity 0.2s ease",
+            ),
+            # <<< THÊM HIỆU ỨNG HOVER
+            rx.link(
+                rx.hstack(
+                    rx.icon(tag="history"),
+                    rx.text("Lịch sử"),
+                    spacing="2",
+                    align_items="center",
+                ),
+                href="/order_history",
+                color="white",
+                _hover={"opacity": 0.8},
+                transition="opacity 0.2s ease",
+            ),
+            rx.cond(
+                MainPageState.LoginState.current_user,
+                # Nếu ĐÃ đăng nhập
+                rx.hstack(
+                    # <<< THÊM HIỆU ỨNG HOVER
+                    rx.link(
+                        rx.hstack(
                             rx.icon(tag="user"),
                             rx.text(MainPageState.LoginState.current_user.get("fullname", "User")),
-                            width="100%",
-                            color="white",
+                            spacing="2",
+                            align_items="center",
                         ),
-                        href="/customer" # Chuyển đến trang thông tin khách hàng
+                        href="/customer",
+                        color="white",
+                        _hover={"opacity": 0.8},
+                        transition="opacity 0.2s ease",
                     ),
+                    # <<< THÊM HIỆU ỨNG HOVER
                     rx.link(
-                        rx.vstack(
+                        rx.hstack(
                            rx.icon(tag="log-out"),
                            rx.text("Logout"),
-                           width="100%",
-                           color="white",
+                           spacing="2",
+                           align_items="center",
                         ),
-                       on_click=MainPageState.LoginState.handle_logout
-                    )
+                        on_click=MainPageState.LoginState.handle_logout,
+                        color="white",
+                        cursor="pointer",
+                        _hover={"opacity": 0.8},
+                        transition="opacity 0.2s ease",
+                    ),
+                    spacing="4",
                 ),
-                # Nếu CHƯA đăng nhập (current_user rỗng)
+                # Nếu CHƯA đăng nhập
+                # <<< THÊM HIỆU ỨNG HOVER
                 rx.link(
-                    rx.vstack(
+                    rx.hstack(
                         rx.icon(tag="user"),
                         rx.text("Login"),
-                        width="100%",
-                        color="white",
+                        spacing="2",
+                        align_items="center",
                     ),
                     href="/login_page",
+                    color="white",
+                    _hover={"opacity": 0.8},
+                    transition="opacity 0.2s ease",
                 ),
-            )
-        ),
-            align_items="center",
-            width="100%",
+            ),
+            spacing="4", # Khoảng cách giữa các mục
         ),
         height="100px",
         width="100%",
         bg="#0069D1",
-        padding_x="2%",  # Dùng padding_x cho gọn
+        padding_x="2%",
         align_items="center",
         justify="between",
     )

@@ -1,14 +1,13 @@
 import reflex as rx
 from .main_page_and_cart_header import header
-from ..states.state import State
-
+from ..states.state import State # Sử dụng base State để truy cập CartState
 
 # Component khi giỏ hàng trống
 def cart_no_item() -> rx.Component:
     return rx.center(
         rx.vstack(
             rx.heading("Giỏ hàng của bạn đang trống", size="5", color_scheme="gray", color = "black"),
-            rx.image(src="cart.jpg", size=64, color="lightgray", margin_y="20px"),
+            rx.image(src="/cart.jpg", width="300px", margin_y="20px"),
             rx.link(
                 rx.button("Tiếp tục mua hàng", color_scheme="grass", size="3"),
                 href="/",
@@ -18,9 +17,8 @@ def cart_no_item() -> rx.Component:
             width="100%",
         ),
         width="100%",
-        height="100%",  # Co giãn theo cha
+        height="calc(100vh - 80px)",  # Co giãn theo cha (trừ header)
     )
-
 
 # Component khi giỏ hàng có sản phẩm
 def cart_with_items() -> rx.Component:
@@ -42,23 +40,25 @@ def cart_with_items() -> rx.Component:
                     on_click=State.CartState.delete_item(it["cart_item_id"]),
                     size="1",
                     color_scheme="red",
+                    cursor="pointer",
                 ),
                 align_items="start",
                 width="40%",
             ),
-            # --- SỬA: Thêm color="black" ---
             rx.text(f"{it['price']:,} đ".replace(",", "."), color="black"),
             rx.hstack(
                 rx.button(
                     "-",
                     on_click=State.CartState.decrement_item(it["cart_item_id"]),
                     size="1",
+                    cursor="pointer",
                 ),
                 rx.text(it["quantity"], margin_x="10px", weight="bold", color="black"),
                 rx.button(
                     "+",
                     on_click=State.CartState.increment_item(it["cart_item_id"]),
                     size="1",
+                    cursor="pointer",
                 ),
                 align_items="center",
             ),
@@ -76,7 +76,7 @@ def cart_with_items() -> rx.Component:
 
     return rx.center(
         rx.hstack(
-            # --- SỬA: Cột trái được thêm max_height và overflow_y ---
+            # Cột trái chứa danh sách sản phẩm
             rx.vstack(
                 rx.heading("Đơn hàng của bạn", size="5", color="black"),
                 rx.divider(),
@@ -86,14 +86,14 @@ def cart_with_items() -> rx.Component:
                 border="1px solid #eee",
                 border_radius="md",
                 spacing="4",
-                max_height="65vh",  # Giới hạn chiều cao tối đa bằng 65% chiều cao màn hình
-                overflow_y="auto",  # Tự động thêm thanh cuộn dọc khi cần
+                max_height="65vh",  # Giới hạn chiều cao tối đa
+                overflow_y="auto",  # Tự động thêm thanh cuộn dọc
+                bg="white",
             ),
             # Cột phải: Thông tin giao hàng và thanh toán
             rx.vstack(
                 rx.heading("Thông tin giao hàng", size="5", color="black"),
                 rx.divider(),
-                # --- SỬA: Thêm color="black" cho các text ---
                 rx.vstack(
                     rx.hstack(
                         rx.text("Người nhận:", width="80px", color="black"),
@@ -159,6 +159,7 @@ def cart_with_items() -> rx.Component:
                 border="1px solid #eee",
                 border_radius="md",
                 spacing="4",
+                bg="white",
             ),
             spacing="6",
             width="100%",
@@ -169,13 +170,12 @@ def cart_with_items() -> rx.Component:
         width="100%",
     )
 
-
 # Hàm index chính của trang
 def index() -> rx.Component:
     return rx.vstack(
         # Header cố định ở trên
         header(),
-        # Nội dung chính được bọc trong rx.box
+        # Nội dung chính
         rx.box(
             rx.cond(State.CartState.has_items, cart_with_items(), cart_no_item()),
             flex_grow=1,

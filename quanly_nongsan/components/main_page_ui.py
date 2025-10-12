@@ -1,34 +1,111 @@
 import reflex as rx
 from .main_page_and_cart_header import header
-
-# Import State của bạn
 from ..states.state import State
 
 
+def add_to_cart_modal_content() -> rx.Component:
+    product = State.MainPageState.selected_product_for_cart
+    quantity = State.MainPageState.quantity_to_add
+
+    return rx.dialog.content(
+        rx.vstack(
+            rx.hstack(
+                rx.image(
+                    src=product["image_url"],
+                    width="100px",
+                    height="100px",
+                    border="1px solid #eee",
+                    border_radius="8px",
+                ),
+                rx.vstack(
+                    rx.heading(product["name"], size="4"),
+                    rx.hstack(
+                        rx.text(product["price"], color="red", weight="bold", size="5"),
+                        rx.text("42.000đ", as_="s", color="#888", size="3"),
+                        align="center",
+                    ),
+                    align="start",
+                ),
+                align="center",
+                spacing="4",
+                width="100%",
+            ),
+            rx.dialog.close(
+                rx.icon(tag="x"),
+                on_click=State.MainPageState.close_add_to_cart_modal,
+                style={
+                    "position": "absolute",
+                    "top": "16px",
+                    "right": "16px",
+                    "cursor": "pointer",
+                },
+            ),
+            rx.hstack(
+                rx.button(
+                    "-",
+                    size="2",
+                    variant="outline",
+                    cursor="pointer",
+                    on_click=State.MainPageState.decrease_quantity,
+                ),
+                rx.input(
+                    value=quantity,
+                    on_change=State.MainPageState.set_quantity_to_add,
+                    width="70px",
+                    text_align="center",
+                    size="2",
+                    type="number",
+                    min=1,
+                ),
+                rx.button(
+                    "+",
+                    size="2",
+                    variant="outline",
+                    cursor="pointer",
+                    on_click=State.MainPageState.increase_quantity,
+                ),
+                justify="center",
+                width="100%",
+                padding_y="20px",
+            ),
+            rx.button(
+                "HOÀN TẤT",
+                width="100%",
+                size="3",
+                bg="#0090FF",
+                on_click=State.MainPageState.add_selected_product_to_cart,
+                style={
+                    "background_color": "#FF424E",
+                    "color": "white",
+                    "cursor": "pointer",
+                },
+            ),
+            spacing="4",
+            width="100%",
+        ),
+        style={"max_width": "500px", "padding": "24px"},
+    )
+
+
 def product_type_item(item: rx.Var[dict]) -> rx.Component:
-    """
-    Component để hiển thị một loại sản phẩm duy nhất.
-    Nhận vào một item từ danh sách state.
-    """
     return rx.link(
         rx.vstack(
             rx.image(
-                src=item["image_url"],  # Lấy URL ảnh từ state
+                src=item["image_url"],
                 width="70%",
                 height="50%",
                 max_height="152px",
-                aspect_ratio="1 / 1",  # Giúp ảnh vuông vắn hơn
+                aspect_ratio="1 / 1",
             ),
-            rx.text(item["name"]),  # Lấy tên loại sản phẩm từ state
+            rx.text(item["name"]),
             align_items="center",
         ),
-        width="30%",  # Giữ nguyên layout 3 cột của bạn
-        href="#",  # Thêm đường dẫn sau này
+        width="30%",
+        href="#",
     )
 
 
 def navigation() -> rx.Component:
-    """Component cho thanh điều hướng."""
     return rx.hstack(
         rx.hstack(
             rx.hstack(
@@ -58,13 +135,8 @@ def navigation() -> rx.Component:
     )
 
 
-# --- PHẦN ĐƯỢC SỬA LẠI ---
-
-
 def product_item(product: rx.Var[dict]) -> rx.Component:
-    """Component để hiển thị một item sản phẩm duy nhất."""
     return rx.vstack(
-        # Link bọc toàn bộ sản phẩm, khi click sẽ đi đến trang chi tiết
         rx.link(
             rx.image(
                 src=product["image_url"],
@@ -80,22 +152,117 @@ def product_item(product: rx.Var[dict]) -> rx.Component:
                 width="100%",
                 padding="8px",
             ),
-            href="#",  # Link chi tiết sản phẩm
+            href="#",
         ),
-        # Nút thêm vào giỏ hàng
-        rx.button(
-            "Thêm vào giỏ hàng",
-            on_click=State.MainPageState.check_login_and_add_to_cart(product),
+        rx.dialog.root(
+            rx.dialog.trigger(
+                rx.button(
+                    "Thêm vào giỏ hàng",
+                    on_click=State.MainPageState.check_login_and_add_to_cart(product),
+                    width="100%",
+                    margin_top="auto",
+                    cursor="pointer",
+                ),
+                width="100%",
+            ),
+            rx.cond(
+                State.MainPageState.show_add_to_cart_modal, add_to_cart_modal_content()
+            ),
+            on_open_change=State.MainPageState.set_show_add_to_cart_modal,
+            # <<< THAY ĐỔI Ở ĐÂY: Thêm width="100%"
             width="100%",
-            margin_top="auto",  # Đẩy nút xuống dưới cùng
-            cursor="pointer",
         ),
         bg="#FFFFFF",
         border="1px solid #eee",
         border_radius="5px",
         overflow="hidden",
         _hover={"box_shadow": "0px 4px 10px rgba(0, 0, 0, 0.1)"},
-        height="100%",  # Đảm bảo các card có chiều cao bằng nhau
+        height="100%",
+    )
+
+
+def product_buyed(product: rx.Var[dict]):
+    return rx.vstack(
+        rx.link(
+            rx.image(
+                src=product["image_url"],
+                width="100%",
+                aspect_ratio="1 / 1",
+                object_fit="cover",
+            ),
+            rx.vstack(
+                rx.text(product["name"], color="black", font_weight="bold", size="2"),
+                rx.text(product["price"], color="red", size="3"),
+                align_items="start",
+                spacing="1",
+                width="100%",
+                padding="8px",
+            ),
+            href="#",
+        ),
+        rx.dialog.root(
+            rx.dialog.trigger(
+                rx.button(
+                    "Mua lại",
+                    on_click=State.MainPageState.check_login_and_add_to_cart(product),
+                    width="100%",
+                    margin_top="auto",
+                    cursor="pointer",
+                ),
+                width="100%",
+            ),
+            rx.cond(
+                State.MainPageState.show_add_to_cart_modal, add_to_cart_modal_content()
+            ),
+            on_open_change=State.MainPageState.set_show_add_to_cart_modal,
+            # <<< THAY ĐỔI Ở ĐÂY: Thêm width="100%"
+            width="100%",
+        ),
+        bg="#FFFFFF",
+        border="1px solid #eee",
+        border_radius="5px",
+        overflow="hidden",
+        _hover={"box_shadow": "0px 4px 10px rgba(0, 0, 0, 0.1)"},
+        height="100%",
+    )
+
+
+def purchased_slider():
+    return rx.cond(
+        State.MainPageState.recently_purchased_products.length() > 0,
+        rx.vstack(
+            rx.hstack(
+                rx.heading("Sản phẩm từng mua", size="5", color="#2287DF"),
+                border="1px solid #eee",
+                border_radius="4px",
+                width="30%",
+                height="35px",
+                align_items="center",
+                justify="center",
+                bg="#FFFFFF",
+                padding="4px",
+            ),
+            rx.vstack(
+                rx.grid(
+                    rx.foreach(
+                        State.MainPageState.recently_purchased_products,
+                        product_buyed,
+                    ),
+                    grid_template_columns="repeat(6, 1fr)",
+                    gap="16px",
+                    padding="10px",
+                    width="100%",
+                    justify="start",
+                ),
+                width="100%",
+            ),
+            align_items="center",
+            color="black",
+            width="100%",
+            bg="#519CE3",
+            padding="40px",
+            margin_bottom="4px",
+        ),
     )
 
 
@@ -118,7 +285,6 @@ def content() -> rx.Component:
                 border_bottom="3px solid #007CBA",
                 border_radius="0",
             ),
-            # Dùng rx.foreach để lặp qua danh sách sản phẩm từ state
             rx.grid(
                 rx.foreach(State.MainPageState.products, product_item),
                 grid_template_columns="repeat(6, 1fr)",
@@ -130,14 +296,11 @@ def content() -> rx.Component:
         align_items="center",
         width="100%",
         padding_x="3%",
+        margin_top="8px",
     )
 
 
-# --- KẾT THÚC PHẦN SỬA ---
-
-
 def footer():
-    # ... (Nội dung hàm footer giữ nguyên)
     return rx.vstack(
         rx.box(
             border="1px solid #eee",
@@ -275,7 +438,6 @@ def footer():
 
 
 def footer_end():
-    # ... (Nội dung hàm footer_end giữ nguyên)
     return (
         rx.box(
             rx.text("Copyright 2025 © TheGioiNongSan.Com", font_size="14px"),
@@ -290,7 +452,6 @@ def footer_end():
 
 
 def index() -> rx.Component:
-    """Hàm dựng giao diện chính của trang chủ."""
     return rx.vstack(
         header(),
         rx.box(border="0.5px solid whitesmoke", width="100%"),
@@ -307,15 +468,16 @@ def index() -> rx.Component:
             gap="20px",
             height="100%",
         ),
+        purchased_slider(),
         content(),
         footer(),
         footer_end(),
         bg="#F5F5F5",
         gap="0",
-        # --- DÒNG SỬA ---
         on_mount=[
             State.LoginState.try_auto_login,
             State.MainPageState.load_product_types,
             State.MainPageState.load_products,
+            State.MainPageState.load_recently_purchased_products,
         ],
     )
