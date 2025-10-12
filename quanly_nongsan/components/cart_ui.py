@@ -34,7 +34,7 @@ def cart_with_items() -> rx.Component:
             rx.vstack(
                 rx.text(
                     it["name"], weight="bold", color="black"
-                ),
+                ),  # Đảm bảo tên sản phẩm màu đen
                 rx.link(
                     "Xóa",
                     on_click=State.CartState.delete_item(it["cart_item_id"]),
@@ -86,8 +86,8 @@ def cart_with_items() -> rx.Component:
                 border="1px solid #eee",
                 border_radius="md",
                 spacing="4",
-                max_height="65vh",
-                overflow_y="auto",
+                max_height="65vh",  # Giới hạn chiều cao tối đa
+                overflow_y="auto",  # Tự động thêm thanh cuộn dọc
                 bg="white",
             ),
             # Cột phải: Thông tin giao hàng và thanh toán
@@ -173,7 +173,9 @@ def cart_with_items() -> rx.Component:
 # Hàm index chính của trang
 def index() -> rx.Component:
     return rx.vstack(
+        # Header cố định ở trên
         header(),
+        # Nội dung chính
         rx.box(
             rx.cond(State.CartState.has_items, cart_with_items(), cart_no_item()),
             flex_grow=1,
@@ -181,6 +183,7 @@ def index() -> rx.Component:
             overflow_y="auto",
             background="#F9FAFB",
         ),
+        # Style cho container cha ngoài cùng
         gap="0",
         spacing="0",
         width="100%",

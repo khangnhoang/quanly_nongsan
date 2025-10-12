@@ -3,7 +3,7 @@ from .main_page_and_cart_header import header
 from ..states.order_history_backend import (
     OrderHistoryState,
     Order,
-)  # <-- import Order trực tiếp
+)
 from ..states.login_backend import State as LoginState
 
 def _status_badge(text: str, color: str) -> rx.Component:
@@ -19,7 +19,7 @@ def _status_badge(text: str, color: str) -> rx.Component:
 
 def _order_card(
     order: Order,
-) -> rx.Component:  # <-- dùng Order (class độc lập), không phải OrderHistoryState.Order
+) -> rx.Component:
     # Hàng card đơn
     return rx.vstack(
         # Header: mã đơn + link + trạng thái (màu)
@@ -123,15 +123,13 @@ def order_history_list() -> rx.Component:
                 border_radius="8px",
                 bg="white",
             ),
-            # Danh sách card có thanh cuộn dọc
+            # <<< THAY ĐỔI Ở ĐÂY: Đã xóa max_height và overflow_y
             rx.box(
                 rx.vstack(
                     rx.foreach(OrderHistoryState.orders, _order_card),
                     gap="12px",
                     width="100%",
                 ),
-                max_height="60vh",
-                overflow_y="auto",
                 width="100%",
                 padding="4px",
                 bg="white",
@@ -154,6 +152,7 @@ def order_history_list() -> rx.Component:
 def index() -> rx.Component:
     return rx.vstack(
         header(),
+        # Component cha này sẽ đảm nhận việc cuộn trang
         rx.box(
             rx.cond(
                 OrderHistoryState.is_loading,
@@ -165,11 +164,10 @@ def index() -> rx.Component:
                     order_history_empty(),
                 ),
             ),
-            height="calc(100vh - 100px)",  # trừ chiều cao header
-            overflow_y="auto",
+            height="calc(100vh - 100px)",  # Giữ nguyên chiều cao cố định
+            overflow_y="auto",             # Giữ nguyên thanh cuộn ở đây
             width="100%",
         ),
-        # Gọi auto-login + bootstrap đợi xong mới load
         on_mount=[
             LoginState.try_auto_login,
             OrderHistoryState.load_orders,

@@ -22,6 +22,7 @@ def header() -> rx.Component:
             spacing="0",
         ),
         rx.hstack(
+            # <<< THÊM HIỆU ỨNG HOVER
             rx.link(
                 rx.hstack(
                     rx.icon(tag="shopping-bag"),
@@ -34,6 +35,7 @@ def header() -> rx.Component:
                 _hover={"opacity": 0.8},
                 transition="opacity 0.2s ease",
             ),
+            # <<< THÊM HIỆU ỨNG HOVER
             rx.link(
                 rx.hstack(
                     rx.icon(tag="history"),
@@ -50,6 +52,7 @@ def header() -> rx.Component:
                 MainPageState.LoginState.current_user,
                 # Nếu ĐÃ đăng nhập
                 rx.hstack(
+                    # <<< THÊM HIỆU ỨNG HOVER
                     rx.link(
                         rx.hstack(
                             rx.icon(tag="user"),
@@ -62,6 +65,7 @@ def header() -> rx.Component:
                         _hover={"opacity": 0.8},
                         transition="opacity 0.2s ease",
                     ),
+                    # <<< THÊM HIỆU ỨNG HOVER
                     rx.link(
                         rx.hstack(
                            rx.icon(tag="log-out"),
@@ -78,6 +82,7 @@ def header() -> rx.Component:
                     spacing="4",
                 ),
                 # Nếu CHƯA đăng nhập
+                # <<< THÊM HIỆU ỨNG HOVER
                 rx.link(
                     rx.hstack(
                         rx.icon(tag="user"),
