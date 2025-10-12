@@ -29,8 +29,8 @@ class ProductDetailState(rx.State):
         """Tải chi tiết các sản phẩm của một đơn hàng dựa vào order_id từ URL."""
         self.is_loading = True
         
-        # <<< THAY ĐỔI Ở ĐÂY: Sửa .router.page.params thành .router.params
-        self.order_id = self.router.params.get("order_id", "")
+        # <<< THAY ĐỔI Ở ĐÂY: Quay lại sử dụng self.router.page.params
+        self.order_id = self.router.page.params.get("order_id", "")
         
         if not self.order_id:
             print("Không tìm thấy order_id trong URL.")
@@ -38,6 +38,7 @@ class ProductDetailState(rx.State):
             return
 
         try:
+            # Chuyển đổi ID từ hex (string) về int để truy vấn DB
             order_id_int = int(self.order_id, 16)
         except ValueError:
             print(f"order_id không hợp lệ: {self.order_id}")

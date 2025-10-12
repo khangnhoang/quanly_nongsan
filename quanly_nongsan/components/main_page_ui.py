@@ -1,77 +1,93 @@
 import reflex as rx
 from .main_page_and_cart_header import header
-
-# Import State của bạn (GIỮ NGUYÊN)
 from ..states.state import State
 
 
-# --- PHẦN MỚI: HÀM TẠO GIAO DIỆN CHO MODAL ĐỘNG (Dựa trên thiết kế cũ) ---
 def add_to_cart_modal_content() -> rx.Component:
-    """
-    Hàm này tạo ra NỘI DUNG ĐỘNG cho modal, có form nhập số lượng.
-    Dữ liệu sản phẩm lấy từ State.MainPageState.selected_product_for_cart
-    """
-    # Lấy thông tin sản phẩm và số lượng từ State
     product = State.MainPageState.selected_product_for_cart
     quantity = State.MainPageState.quantity_to_add
-    
+
     return rx.dialog.content(
         rx.vstack(
             rx.hstack(
                 rx.image(
-                    src=product["image_url"], # Dùng data từ State
-                    width="100px", height="100px", border="1px solid #eee", border_radius="8px",
+                    src=product["image_url"],
+                    width="100px",
+                    height="100px",
+                    border="1px solid #eee",
+                    border_radius="8px",
                 ),
                 rx.vstack(
-                    rx.heading(product["name"], size="4"), # Dùng data từ State
+                    rx.heading(product["name"], size="4"),
                     rx.hstack(
-                        rx.text(product["price"], color="red", weight="bold", size="5"), # Dùng data từ State
-                        rx.text("42.000đ", as_="s", color="#888", size="3"), # Giữ giá khuyến mãi tĩnh
+                        rx.text(product["price"], color="red", weight="bold", size="5"),
+                        rx.text("42.000đ", as_="s", color="#888", size="3"),
                         align="center",
                     ),
                     align="start",
                 ),
-                align="center", spacing="4", width="100%",
+                align="center",
+                spacing="4",
+                width="100%",
             ),
             rx.dialog.close(
                 rx.icon(tag="x"),
-                on_click=State.MainPageState.close_add_to_cart_modal, # Thêm hành động đóng modal và reset state
-                style={"position": "absolute", "top": "16px", "right": "16px", "cursor": "pointer"}
+                on_click=State.MainPageState.close_add_to_cart_modal,
+                style={
+                    "position": "absolute",
+                    "top": "16px",
+                    "right": "16px",
+                    "cursor": "pointer",
+                },
             ),
-            # --- CÁC THÀNH PHẦN NHẬP SỐ LƯỢNG ĐÃ ĐƯỢC LIÊN KẾT VỚI BACKEND ---
             rx.hstack(
                 rx.button(
-                    "-", size="2", variant="outline", 
-                    on_click=State.MainPageState.decrease_quantity # Giảm số lượng
+                    "-",
+                    size="2",
+                    variant="outline",
+                    cursor="pointer",
+                    on_click=State.MainPageState.decrease_quantity,
                 ),
                 rx.input(
-                    value=quantity, # Liên kết với State.MainPageState.quantity_to_add
-                    on_change=State.MainPageState.set_quantity_to_add, # Cập nhật State khi người dùng nhập
-                    width="70px", text_align="center", size="2", type="number", min=1
+                    value=quantity,
+                    on_change=State.MainPageState.set_quantity_to_add,
+                    width="70px",
+                    text_align="center",
+                    size="2",
+                    type="number",
+                    min=1,
                 ),
                 rx.button(
-                    "+", size="2", variant="outline",
-                    on_click=State.MainPageState.increase_quantity # Tăng số lượng
+                    "+",
+                    size="2",
+                    variant="outline",
+                    cursor="pointer",
+                    on_click=State.MainPageState.increase_quantity,
                 ),
-                justify="center", width="100%", padding_y="20px",
+                justify="center",
+                width="100%",
+                padding_y="20px",
             ),
             rx.button(
-                "HOÀN TẤT", width="100%", size="3",
-                on_click=State.MainPageState.add_selected_product_to_cart, # Gọi hàm xử lý thêm vào giỏ hàng
-                style={"background_color": "#FF424E", "color": "white", "cursor": "pointer"},
+                "HOÀN TẤT",
+                width="100%",
+                size="3",
+                bg="#0090FF",
+                on_click=State.MainPageState.add_selected_product_to_cart,
+                style={
+                    "background_color": "#FF424E",
+                    "color": "white",
+                    "cursor": "pointer",
+                },
             ),
-            spacing="4", width="100%",
+            spacing="4",
+            width="100%",
         ),
         style={"max_width": "500px", "padding": "24px"},
     )
-# --- KẾT THÚC PHẦN CẬP NHẬT MODAL ---
 
 
 def product_type_item(item: rx.Var[dict]) -> rx.Component:
-    """
-    Component để hiển thị một loại sản phẩm duy nhất.
-    (KHÔNG THAY ĐỔI)
-    """
     return rx.link(
         rx.vstack(
             rx.image(
@@ -90,7 +106,6 @@ def product_type_item(item: rx.Var[dict]) -> rx.Component:
 
 
 def navigation() -> rx.Component:
-    """Component cho thanh điều hướng. (KHÔNG THAY ĐỔI)"""
     return rx.hstack(
         rx.hstack(
             rx.hstack(
@@ -121,7 +136,6 @@ def navigation() -> rx.Component:
 
 
 def product_item(product: rx.Var[dict]) -> rx.Component:
-    """Component để hiển thị một item sản phẩm duy nhất."""
     return rx.vstack(
         rx.link(
             rx.image(
@@ -140,27 +154,24 @@ def product_item(product: rx.Var[dict]) -> rx.Component:
             ),
             href="#",
         ),
-        # --- SỬA LỖI & KÍCH HOẠT MODAL ĐỘNG (Giao diện nút như cũ) ---
         rx.dialog.root(
             rx.dialog.trigger(
                 rx.button(
                     "Thêm vào giỏ hàng",
-                    # Gắn hành động kiểm tra đăng nhập, lưu sản phẩm và mở modal
                     on_click=State.MainPageState.check_login_and_add_to_cart(product),
                     width="100%",
                     margin_top="auto",
                     cursor="pointer",
-                )
+                ),
+                width="100%",
             ),
-            # Chỉ hiển thị modal khi show_add_to_cart_modal là True
             rx.cond(
-                State.MainPageState.show_add_to_cart_modal,
-                add_to_cart_modal_content() # Dùng modal động mới
+                State.MainPageState.show_add_to_cart_modal, add_to_cart_modal_content()
             ),
-            # Thêm on_open_change để đóng modal khi click ra ngoài hoặc Esc
             on_open_change=State.MainPageState.set_show_add_to_cart_modal,
+            # <<< THAY ĐỔI Ở ĐÂY: Thêm width="100%"
+            width="100%",
         ),
-        # -----------------------------------------------
         bg="#FFFFFF",
         border="1px solid #eee",
         border_radius="5px",
@@ -171,9 +182,6 @@ def product_item(product: rx.Var[dict]) -> rx.Component:
 
 
 def product_buyed(product: rx.Var[dict]):
-    """
-    Component để hiển thị một sản phẩm đã từng mua.
-    """
     return rx.vstack(
         rx.link(
             rx.image(
@@ -192,27 +200,24 @@ def product_buyed(product: rx.Var[dict]):
             ),
             href="#",
         ),
-        # --- SỬA LỖI & KÍCH HOẠT MODAL ĐỘNG (Giao diện nút như cũ) ---
         rx.dialog.root(
             rx.dialog.trigger(
                 rx.button(
                     "Mua lại",
-                    # Gắn hành động kiểm tra đăng nhập, lưu sản phẩm và mở modal
                     on_click=State.MainPageState.check_login_and_add_to_cart(product),
                     width="100%",
                     margin_top="auto",
                     cursor="pointer",
-                )
+                ),
+                width="100%",
             ),
-            # Chỉ hiển thị modal khi show_add_to_cart_modal là True
             rx.cond(
-                State.MainPageState.show_add_to_cart_modal,
-                add_to_cart_modal_content() # Dùng modal động mới
+                State.MainPageState.show_add_to_cart_modal, add_to_cart_modal_content()
             ),
-            # Thêm on_open_change để đóng modal khi click ra ngoài hoặc Esc
             on_open_change=State.MainPageState.set_show_add_to_cart_modal,
+            # <<< THAY ĐỔI Ở ĐÂY: Thêm width="100%"
+            width="100%",
         ),
-        # -----------------------------------------------
         bg="#FFFFFF",
         border="1px solid #eee",
         border_radius="5px",
@@ -223,7 +228,6 @@ def product_buyed(product: rx.Var[dict]):
 
 
 def purchased_slider():
-    """Component hiển thị các sản phẩm đã từng mua. (KHÔNG THAY ĐỔI)"""
     return rx.cond(
         State.MainPageState.recently_purchased_products.length() > 0,
         rx.vstack(
@@ -238,7 +242,7 @@ def purchased_slider():
                 bg="#FFFFFF",
                 padding="4px",
             ),
-            rx.vstack( 
+            rx.vstack(
                 rx.grid(
                     rx.foreach(
                         State.MainPageState.recently_purchased_products,
@@ -263,7 +267,6 @@ def purchased_slider():
 
 
 def content() -> rx.Component:
-    """Phần nội dung chính. (KHÔNG THAY ĐỔI)"""
     return rx.vstack(
         rx.vstack(
             rx.hstack(
@@ -293,12 +296,11 @@ def content() -> rx.Component:
         align_items="center",
         width="100%",
         padding_x="3%",
-        margin_top = "8px",
+        margin_top="8px",
     )
 
 
 def footer():
-    """Phần footer. (KHÔNG THAY ĐỔI)"""
     return rx.vstack(
         rx.box(
             border="1px solid #eee",
@@ -436,7 +438,6 @@ def footer():
 
 
 def footer_end():
-    """Phần cuối footer. (KHÔNG THAY ĐỔI)"""
     return (
         rx.box(
             rx.text("Copyright 2025 © TheGioiNongSan.Com", font_size="14px"),
@@ -451,7 +452,6 @@ def footer_end():
 
 
 def index() -> rx.Component:
-    """Hàm dựng giao diện chính của trang chủ. (KHÔNG THAY ĐỔI)"""
     return rx.vstack(
         header(),
         rx.box(border="0.5px solid whitesmoke", width="100%"),
@@ -478,6 +478,6 @@ def index() -> rx.Component:
             State.LoginState.try_auto_login,
             State.MainPageState.load_product_types,
             State.MainPageState.load_products,
-            State.MainPageState.load_recently_purchased_products
+            State.MainPageState.load_recently_purchased_products,
         ],
     )
