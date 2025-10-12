@@ -11,6 +11,7 @@ CONNECTION_STRING = os.getenv("DATABASE_URL")
 
 class OrderItem(rx.Base):
     """Định nghĩa cấu trúc cho một sản phẩm trong đơn hàng chi tiết."""
+
     product_id: int
     product_name: str
     image_url: str
@@ -20,6 +21,7 @@ class OrderItem(rx.Base):
 
 class ProductDetailState(rx.State):
     """State quản lý logic cho trang chi tiết đơn hàng."""
+
     order_id: str = ""
     order_items: list[OrderItem] = []
     grand_total: str = ""
@@ -28,10 +30,10 @@ class ProductDetailState(rx.State):
     async def load_order_details(self):
         """Tải chi tiết các sản phẩm của một đơn hàng dựa vào order_id từ URL."""
         self.is_loading = True
-        
+
         # <<< THAY ĐỔI Ở ĐÂY: Quay lại sử dụng self.router.page.params
         self.order_id = self.router.page.params.get("order_id", "")
-        
+
         if not self.order_id:
             print("Không tìm thấy order_id trong URL.")
             self.is_loading = False
@@ -47,7 +49,7 @@ class ProductDetailState(rx.State):
 
         temp_items = []
         total_price = 0
-        
+
         try:
             with pyodbc.connect(CONNECTION_STRING) as conn:
                 cursor = conn.cursor()
@@ -72,7 +74,9 @@ class ProductDetailState(rx.State):
                             product_name=item.Name,
                             image_url=item.ImageURL or "/no-image.png",
                             quantity=item.Quantity,
-                            unit_price_formatted=f"{int(item.Price):,} đ".replace(",", "."),
+                            unit_price_formatted=f"{int(item.Price):,} đ".replace(
+                                ",", "."
+                            ),
                         )
                     )
 
@@ -86,13 +90,13 @@ class ProductDetailState(rx.State):
 
     def reorder_from_detail(self):
         """Chức năng 'Mua lại' trên trang chi tiết: thêm tất cả sản phẩm vào giỏ hàng."""
-        
+
         items_to_reorder = [
             (item.product_id, item.quantity) for item in self.order_items
         ]
-        
+
         return [
             CartState.add_multiple_items_to_cart(items_to_reorder),
             rx.window_alert(f"Đã thêm {len(items_to_reorder)} sản phẩm vào giỏ hàng."),
-            rx.redirect("/cart")
+            rx.redirect("/cart"),
         ]
