@@ -2,8 +2,18 @@ import reflex as rx
 from ..states.state import State
 from .sidebar_ui import sidebar
 
+# TẠO HÀM RIÊNG BIỆT ĐỂ XỬ LÝ VIỆC XÓA TỪ NÚT XÓA ICON
+def delete_single_image_wrapper(stt: int):
+    # Gọi hàm backend để xóa mục
+    return State.ImageState.delete_single_image_by_stt(stt)
+
 # --- Nội dung chính ---
 def main_content() -> rx.Component:
+    # Kiểm tra xem STT của item có trong danh sách STT đã chọn hay không.
+    is_selected = lambda image: (
+        State.ImageState.selected_image_stt_list.contains(image["stt"])
+    )
+    
     return rx.vstack(
         rx.center(
             rx.hstack(
@@ -108,7 +118,7 @@ def main_content() -> rx.Component:
         rx.divider(border_color="rainbow"),
         rx.hstack(
             rx.input(
-                placeholder="Tìm ảnh theo đường dẫn (URL) và nhấn Enter...",
+                placeholder="Tìm ảnh theo đường dẫn (URL) hoặc mô tả và nhấn Enter...",
                 value=State.ImageState.image_search_query,
                 on_change=State.ImageState.set_image_search_query,
                 on_key_down=State.ImageState.search_images_on_enter,
@@ -117,39 +127,49 @@ def main_content() -> rx.Component:
                 style={"input::placeholder": {"color": "#ccc"}},
                 color = "black"
             ),
-            rx.cond(
-                State.ImageState.selected_image,
-                rx.button(
-                    "Xóa ảnh đã chọn",
-                    on_click=State.ImageState.delete_image,
-                    color_scheme="red",
-                ),
+            # --- NÚT XÓA NHIỀU MỤC ĐÃ CHỌN ---
+            rx.button(
+                "Xóa các mục đã chọn",
+                on_click=State.ImageState.delete_selected_images,
+                color_scheme="red",
+                is_disabled=State.ImageState.selected_image_stt_list.length == 0
             ),
             spacing="4",
             width="100%",
             padding_y="1em",
         ),
+        # --- BẢNG DANH SÁCH ẢNH ---
         rx.table.root(
             rx.table.header(
                 rx.table.row(
+                    # CỘT CHECKBOX CHỌN TẤT CẢ
                     rx.table.column_header_cell(
-                        "Chọn", color="black", border="1px solid #C1C1C1"
+                        rx.vstack(
+                            rx.checkbox(
+                                checked=State.ImageState.all_selected,
+                                on_change=State.ImageState.select_all_images,
+                            ),
+                            spacing="1",
+                        ),
+                        color="black", border="1px solid #C1C1C1", bg="#E4E6E7"
                     ),
                     rx.table.column_header_cell(
-                        "STT", color="black", border="1px solid #C1C1C1"
+                        "STT", color="black", border="1px solid #C1C1C1", bg="#E4E6E7"
                     ),
                     rx.table.column_header_cell(
-                        "Ảnh", color="black", border="1px solid #C1C1C1"
+                        "Ảnh", color="black", border="1px solid #C1C1C1", bg="#E4E6E7"
                     ),
                     rx.table.column_header_cell(
-                        "Đường dẫn", color="black", border="1px solid #C1C1C1"
+                        "Đường dẫn", color="black", border="1px solid #C1C1C1", bg="#E4E6E7"
                     ),
                     rx.table.column_header_cell(
-                        "Mô tả (Alt Text)", color="black", border="1px solid #C1C1C1"
+                        "Mô tả (Alt Text)", color="black", border="1px solid #C1C1C1", bg="#E4E6E7"
                     ),
                     rx.table.column_header_cell(
-                        "Ngày tạo", color="black", border="1px solid #C1C1C1"
+                        "Ngày tạo", color="black", border="1px solid #C1C1C1", bg="#E4E6E7"
                     ),
+                    # CỘT HÀNH ĐỘNG MỚI
+                    rx.table.column_header_cell("Hành động", color="black", border="1px solid #C1C1C1", bg="#E4E6E7", text_align="center"),
                 )
             ),
             rx.table.body(
@@ -157,19 +177,19 @@ def main_content() -> rx.Component:
                     State.ImageState.images,
                     lambda image: rx.table.row(
                         rx.table.cell(
+                            # Checkbox từng mục
                             rx.checkbox(
-                                checked=(
-                                    State.ImageState.selected_image.is_not_none()
-                                    & (
-                                        State.ImageState.selected_image["stt"]
-                                        == image["stt"]
-                                    )
-                                ),
+                                checked=is_selected(image),
                                 on_change=lambda checked: State.ImageState.handle_image_selection(
                                     checked, image
                                 ),
                             ),
                             border="1px solid #C1C1C1",
+                            bg=rx.cond(
+                                is_selected(image), 
+                                "#f0f8ff", # Màu nền sáng khi được chọn
+                                "white"
+                            )
                         ),
                         rx.table.cell(
                             image["stt"], color="black", border="1px solid #C1C1C1"
@@ -190,6 +210,22 @@ def main_content() -> rx.Component:
                             color="black",
                             border="1px solid #C1C1C1",
                         ),
+                        # CỘT HÀNH ĐỘNG DATA
+                        rx.table.cell(
+                            rx.hstack(
+                                rx.button(
+                                    rx.icon("trash-2"),
+                                    on_click=delete_single_image_wrapper(image["stt"]),
+                                    size="1",
+                                    color_scheme="red",
+                                ),
+                                spacing="2",
+                                justify="center"
+                            ),
+                            border="1px solid #C1C1C1",
+                            text_align="center"
+                        ),
+                        key=image["stt"],
                     ),
                 )
             ),
