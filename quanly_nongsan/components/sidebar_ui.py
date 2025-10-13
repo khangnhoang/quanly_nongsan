@@ -99,14 +99,14 @@ def sidebar() -> rx.Component:
         ),
         rx.spacer(),  # Đẩy nội dung xuống dưới cùng
         rx.vstack(
-            rx.heading("Xin chào: ", State.LoginState.current_user["fullname"], size="5", text_align="left"),
+            # rx.heading("Xin chào: ", State.LoginState.current_user["fullname"], size="5", text_align="left"),
             rx.button(
                 "Đăng xuất",
                 bg="lightgray",
                 color="black",
                 border="1px solid",
                 cursor="pointer",
-                on_click=State.LoginState.handle_logout,
+                # on_click=State.LoginState.handle_logout,
                 
             ),
             marginTop="auto",  # Đẩy lên trên cùng của vstack này

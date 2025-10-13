@@ -1,7 +1,7 @@
 import reflex as rx
-from .sidebar_ui import sidebar
+from .sidebar_ui import sidebar as sidebar
 
 def index () -> rx.Component:
     return rx.hstack(
-        sidebar
+        sidebar()
     )
