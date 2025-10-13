@@ -1,5 +1,6 @@
-from .report_order_backend import State as reportOrderState
+from .report_order_backend import ReportOrderState as reportOrderState
+
 import reflex as rx
 
 class State(rx.State):
-    reportOrderState = reportOrderState
+    ReportOrderState = reportOrderState

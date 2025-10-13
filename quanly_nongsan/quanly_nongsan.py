@@ -4,7 +4,6 @@ import reflex as rx
 
 from .components.report_order_ui import index as report_order_page
 
-
 class State(rx.State):
     """The app state."""
 
