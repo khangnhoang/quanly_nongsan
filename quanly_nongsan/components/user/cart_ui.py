@@ -1,12 +1,17 @@
 import reflex as rx
 from .main_page_and_cart_header import header
-from ...states.state import State # Sử dụng base State để truy cập CartState
+from ...states.state import State
 
-# Component khi giỏ hàng trống
+
 def cart_no_item() -> rx.Component:
     return rx.center(
         rx.vstack(
-            rx.heading("Giỏ hàng của bạn đang trống", size="5", color_scheme="gray", color = "black"),
+            rx.heading(
+                "Giỏ hàng của bạn đang trống",
+                size="5",
+                color_scheme="gray",
+                color="black",
+            ),
             rx.image(src="/cart.jpg", width="300px", margin_y="20px"),
             rx.link(
                 rx.button("Tiếp tục mua hàng", color_scheme="grass", size="3"),
@@ -17,10 +22,62 @@ def cart_no_item() -> rx.Component:
             width="100%",
         ),
         width="100%",
-        height="calc(100vh - 80px)",  # Co giãn theo cha (trừ header)
+        height="calc(100vh - 80px)",
     )
 
-# Component khi giỏ hàng có sản phẩm
+
+def delivery_time_selector() -> rx.Component:
+    def radio_item_view(option: dict):
+        """Tạo view cho mỗi radio button để dễ quản lý style."""
+        is_disabled = option["is_disabled"]
+        return rx.flex(
+            rx.radio_group.item(
+                value=option["value"],
+                disabled=is_disabled,
+            ),
+            rx.text(
+                option["label"],
+                color=rx.cond(is_disabled, "#AEAEAE", "black"),
+            ),
+            spacing="2",
+            cursor=rx.cond(is_disabled, "not-allowed", "pointer"),
+            align_items="center",
+        )
+
+    return rx.vstack(
+        rx.text("Chọn thời gian giao hàng", weight="bold", color="black"),
+        rx.segmented_control.root(
+            rx.segmented_control.item("Hôm nay", value="Hôm nay", bg="#0090FF", cursor = "pointer"),
+            rx.segmented_control.item("Ngày mai", value="Ngày mai", bg="#0090FF", cursor = "pointer"),
+            value=rx.cond(
+                State.CartState.selected_delivery_day == "hom_nay",
+                "Hôm nay",
+                "Ngày mai",
+            ),
+            on_change=lambda day: State.CartState.set_delivery_day(
+                rx.cond(day == "Hôm nay", "hom_nay", "ngay_mai")
+            ),
+            name="delivery_day",
+            color_scheme="grass",
+        ),
+        rx.radio_group.root(
+            rx.foreach(
+                State.CartState.valid_delivery_options,
+                radio_item_view,
+            ),
+            value=State.CartState.selected_delivery_slot,
+            on_change=State.CartState.set_delivery_slot,
+            spacing="3",
+            margin_top="10px",
+            width="100%",
+            cursor = "pointer"
+        ),
+        align_items="start",
+        width="100%",
+        spacing="2",
+    )
+
+
 def cart_with_items() -> rx.Component:
     def row_view(it: dict):
         return rx.hstack(
@@ -32,9 +89,7 @@ def cart_with_items() -> rx.Component:
                 border_radius="md",
             ),
             rx.vstack(
-                rx.text(
-                    it["name"], weight="bold", color="black"
-                ),  # Đảm bảo tên sản phẩm màu đen
+                rx.text(it["name"], weight="bold", color="black"),
                 rx.link(
                     "Xóa",
                     on_click=State.CartState.delete_item(it["cart_item_id"]),
@@ -76,7 +131,6 @@ def cart_with_items() -> rx.Component:
 
     return rx.center(
         rx.hstack(
-            # Cột trái chứa danh sách sản phẩm
             rx.vstack(
                 rx.heading("Đơn hàng của bạn", size="5", color="black"),
                 rx.divider(),
@@ -86,11 +140,10 @@ def cart_with_items() -> rx.Component:
                 border="1px solid #eee",
                 border_radius="md",
                 spacing="4",
-                max_height="65vh",  # Giới hạn chiều cao tối đa
-                overflow_y="auto",  # Tự động thêm thanh cuộn dọc
+                max_height="65vh",
+                overflow_y="auto",
                 bg="white",
             ),
-            # Cột phải: Thông tin giao hàng và thanh toán
             rx.vstack(
                 rx.heading("Thông tin giao hàng", size="5", color="black"),
                 rx.divider(),
@@ -113,15 +166,12 @@ def cart_with_items() -> rx.Component:
                             State.CartState.user_address, weight="bold", color="black"
                         ),
                     ),
-                    rx.text(
-                        "Để thay đổi, vui lòng vào trang hồ sơ.",
-                        size="1",
-                        color_scheme="gray",
-                    ),
                     align_items="start",
                     spacing="2",
                     width="100%",
                 ),
+                rx.divider(margin_y="10px"),
+                delivery_time_selector(),
                 rx.spacer(),
                 rx.divider(),
                 rx.hstack(
@@ -170,12 +220,10 @@ def cart_with_items() -> rx.Component:
         width="100%",
     )
 
-# Hàm index chính của trang
+
 def index() -> rx.Component:
     return rx.vstack(
-        # Header cố định ở trên
         header(),
-        # Nội dung chính
         rx.box(
             rx.cond(State.CartState.has_items, cart_with_items(), cart_no_item()),
             flex_grow=1,
@@ -183,7 +231,6 @@ def index() -> rx.Component:
             overflow_y="auto",
             background="#F9FAFB",
         ),
-        # Style cho container cha ngoài cùng
         gap="0",
         spacing="0",
         width="100%",

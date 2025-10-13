@@ -22,20 +22,26 @@ def _order_card(
 ) -> rx.Component:
     # Hàng card đơn
     return rx.vstack(
-        # Header: mã đơn + link + trạng thái (màu)
+        # Header: mã đơn + link
         rx.hstack(
             rx.text(f"Đơn hàng #{order.id}", font_weight="bold"),
-            rx.link("Xem chi tiết >", href=f"/product_detail?order_id={order.id}", color="black"),
+            rx.link("Xem chi tiết >", href=f"/product_detail?order_id={order.id}", color="black", size="2"),
             justify="between",
             align="center",
             width="100%",
             color="black",
         ),
+        
+        # CẬP NHẬT GIAO DIỆN: Thêm dòng hiển thị thời gian giao và trạng thái
         rx.hstack(
+            rx.text(order.delivery_date_formatted, size="2", color = "black"),
             _status_badge(order.status_text, order.status_color),
-            justify="end",
+            justify="between",
+            align="center",
             width="100%",
+            margin_top="-5px", # Điều chỉnh nhỏ để gần hơn
         ),
+        
         # Ảnh sản phẩm (tối đa 4)
         rx.hstack(
             rx.foreach(
@@ -52,11 +58,10 @@ def _order_card(
             justify="end",
             width="100%",
         ),
-        # Nút mua lại: Dùng rx.link để chuyển hướng đến trang chi tiết
+        # Nút mua lại
         rx.link(
             rx.button(
                 "Mua lại",
-                # on_click được loại bỏ vì đã sử dụng rx.link để chuyển hướng
                 width="100%",
                 bg="white",
                 border="1px solid #eee",
@@ -64,7 +69,7 @@ def _order_card(
                 color = "black"
             ),
             href=f"/product_detail?order_id={order.id}",
-            width="100%", # Quan trọng để link bao bọc hết chiều rộng của button
+            width="100%",
         ),
         
         border="1px solid #eee",
@@ -123,7 +128,6 @@ def order_history_list() -> rx.Component:
                 border_radius="8px",
                 bg="white",
             ),
-            # <<< THAY ĐỔI Ở ĐÂY: Đã xóa max_height và overflow_y
             rx.box(
                 rx.vstack(
                     rx.foreach(OrderHistoryState.orders, _order_card),
@@ -152,11 +156,9 @@ def order_history_list() -> rx.Component:
 def index() -> rx.Component:
     return rx.vstack(
         header(),
-        # Component cha này sẽ đảm nhận việc cuộn trang
         rx.box(
             rx.cond(
                 OrderHistoryState.is_loading,
-                # loading skeleton
                 rx.center(rx.spinner(size="3"), height="100%"),
                 rx.cond(
                     OrderHistoryState.has_orders,
@@ -164,8 +166,8 @@ def index() -> rx.Component:
                     order_history_empty(),
                 ),
             ),
-            height="calc(100vh - 100px)",  # Giữ nguyên chiều cao cố định
-            overflow_y="auto",             # Giữ nguyên thanh cuộn ở đây
+            height="calc(100vh - 100px)",
+            overflow_y="auto",
             width="100%",
         ),
         on_mount=[

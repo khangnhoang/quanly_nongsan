@@ -1,4 +1,3 @@
-# C:\quanly_nongsan\quanly_nongsan\states\order_history_backend.py
 import reflex as rx
 import pyodbc
 import os
@@ -9,10 +8,10 @@ load_dotenv()
 CONNECTION_STRING = os.getenv("DATABASE_URL")
 
 STATUS_MAP = {
-    "1": {"text": "Chờ xác nhận", "color": "orange"},
-    "Mới": {"text": "Mới", "color": "blue"},
-    "Giao thành công": {"text": "Giao thành công", "color": "green"},
-    "Đã hủy": {"text": "Đã hủy", "color": "red"},
+    "pending": {"text": "Chờ xác nhận", "color": "orange"},
+    "processing": {"text": "Đang xử lý", "color": "blue"},
+    "delivered": {"text": "Giao thành công", "color": "green"},
+    "cancelled": {"text": "Đã hủy", "color": "red"},
 }
 DEFAULT_STATUS = {"text": "Không xác định", "color": "gray"}
 
@@ -23,6 +22,8 @@ class Order(rx.Base):
     status_color: str
     product_images: list[str]
     total_price_formatted: str
+    # THÊM TRƯỜNG MỚI ĐỂ HIỂN THỊ
+    delivery_date_formatted: str
 
 
 class OrderHistoryState(rx.State):
@@ -32,15 +33,6 @@ class OrderHistoryState(rx.State):
     @rx.var
     def has_orders(self) -> bool:
         return len(self.orders) > 0
-
-    async def bootstrap_after_login(self):
-        """Đợi LoginState.current_user có id rồi mới load_orders."""
-        login = await self.get_state(LoginState)
-        user_id = login.current_user.get("id") if isinstance(login.current_user, dict) else None
-        if not user_id:
-            # Poll nhẹ 50ms cho đến khi hydrate xong
-            return rx.call_script("setTimeout(()=>true, 50)", callback=type(self).bootstrap_after_login)
-        return self.load_orders
 
     async def load_orders(self):
         self.is_loading = True
@@ -56,8 +48,9 @@ class OrderHistoryState(rx.State):
         try:
             with pyodbc.connect(CONNECTION_STRING) as conn:
                 cursor = conn.cursor()
+                # CẬP NHẬT CÂU LỆNH SQL: Lấy thêm cột DeliveryDate
                 cursor.execute(
-                    "SELECT ID, OrderDate, Status FROM Orders WHERE UserID = ? ORDER BY OrderDate DESC",
+                    "SELECT ID, OrderDate, Status, DeliveryDate FROM Orders WHERE UserID = ? ORDER BY OrderDate DESC",
                     (user_id,),
                 )
                 user_orders = cursor.fetchall()
@@ -83,6 +76,14 @@ class OrderHistoryState(rx.State):
                         if len(product_images) < 4:
                             product_images.append(item.ImageURL or "/no-image.png")
 
+                    # CẬP NHẬT LOGIC: Định dạng ngày giờ giao hàng
+                    delivery_datetime = order_row.DeliveryDate
+                    delivery_date_formatted = ""
+                    if delivery_datetime:
+                        hour = delivery_datetime.hour
+                        day = delivery_datetime.strftime("%d/%m/%Y")
+                        delivery_date_formatted = f"Giao trước {hour}:00 - {day}"
+
                     status_info = STATUS_MAP.get(str(order_row.Status), DEFAULT_STATUS)
 
                     temp_orders.append(
@@ -92,6 +93,8 @@ class OrderHistoryState(rx.State):
                             status_color=status_info["color"],
                             product_images=product_images,
                             total_price_formatted=f"{int(total_price):,} đ".replace(",", "."),
+                            # Gán giá trị đã định dạng vào đối tượng Order
+                            delivery_date_formatted=delivery_date_formatted,
                         )
                     )
             self.orders = temp_orders
@@ -99,7 +102,5 @@ class OrderHistoryState(rx.State):
             print(f"Lỗi khi tải lịch sử đơn hàng: {e}")
         self.is_loading = False
 
-    # Tuỳ chọn: nút "Mua lại"
     def reorder(self, order_id: str):
-        """Chuyển hướng đến trang chi tiết đơn hàng để thực hiện 'Mua lại' chi tiết hơn."""
         return rx.redirect(f"/product_detail?order_id={order_id}")
