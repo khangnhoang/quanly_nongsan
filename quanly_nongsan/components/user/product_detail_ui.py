@@ -1,7 +1,7 @@
 # C:\quanly_nongsan\quanly_nongsan\pages\product_detail_ui.py
 import reflex as rx
 from .main_page_and_cart_header import header
-from ..states.product_detail_backend import ProductDetailState, OrderItem
+from ...states.user.product_detail_backend import ProductDetailState, OrderItem
 
 def _order_item_row(item: OrderItem) -> rx.Component:
     """Tạo một hàng giao diện cho từng sản phẩm trong đơn hàng."""

@@ -1,11 +1,11 @@
 import reflex as rx
-from .cart_backend import CartState
-from .login_backend import State as LoginState
-from .main_page_backend import MainPageState
-from .product_types_backend import State as productState
-from .product_category_backend import State as productState2
-from .customer_backend import UserState as UserState
-from .images_backend import ImageState as ImageState
+from .user.cart_backend import CartState
+from .admin.login_backend import State as LoginState
+from .user.main_page_backend import MainPageState
+from .admin.product_types_backend import State as productState
+from .admin.product_category_backend import State as productState2
+from .admin.customer_backend import UserState as UserState
+from .admin.images_backend import ImageState as ImageState
 
 
 class State(rx.State):

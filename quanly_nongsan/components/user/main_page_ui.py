@@ -1,6 +1,6 @@
 import reflex as rx
 from .main_page_and_cart_header import header
-from ..states.state import State
+from ...states.state import State
 
 
 def add_to_cart_modal_content() -> rx.Component:

@@ -1,7 +1,7 @@
 # product_category_ui.py
 
 import reflex as rx
-from ..states.state import State
+from ...states.state import State
 from .sidebar_ui import sidebar
 
 # TẠO CÁC HÀM HELPER GIỐNG product_types_ui

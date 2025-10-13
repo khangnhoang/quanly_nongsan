@@ -1,5 +1,5 @@
 import reflex as rx
-from ..states.main_page_backend import MainPageState
+from ...states.user.main_page_backend import MainPageState
 
 def header() -> rx.Component:
     """Component cho phần header đầu trang."""

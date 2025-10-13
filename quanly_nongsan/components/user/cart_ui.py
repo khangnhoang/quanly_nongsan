@@ -1,6 +1,6 @@
 import reflex as rx
 from .main_page_and_cart_header import header
-from ..states.state import State # Sử dụng base State để truy cập CartState
+from ...states.state import State # Sử dụng base State để truy cập CartState
 
 # Component khi giỏ hàng trống
 def cart_no_item() -> rx.Component:

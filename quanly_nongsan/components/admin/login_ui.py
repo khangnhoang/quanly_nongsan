@@ -1,5 +1,5 @@
 import reflex as rx
-from ..states.state import State
+from ...states.state import State
 
 
 def index() -> rx.Component:

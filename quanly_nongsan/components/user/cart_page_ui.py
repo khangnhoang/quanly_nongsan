@@ -1,7 +1,7 @@
 import reflex as rx
 
 # Import CartState từ backend
-from ..states.cart_backend import CartState 
+from ...states.user.cart_backend import CartState 
 
 # Component cho từng dòng sản phẩm trong giỏ hàng
 def cart_item_row(item: rx.Var[dict], index: rx.Var[int]) -> rx.Component:

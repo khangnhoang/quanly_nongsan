@@ -1,10 +1,10 @@
 import reflex as rx
 from .main_page_and_cart_header import header
-from ..states.order_history_backend import (
+from ...states.user.order_history_backend import (
     OrderHistoryState,
     Order,
 )
-from ..states.login_backend import State as LoginState
+from ...states.admin.login_backend import State as LoginState
 
 def _status_badge(text: str, color: str) -> rx.Component:
     return rx.box(
