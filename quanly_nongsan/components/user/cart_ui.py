@@ -47,8 +47,12 @@ def delivery_time_selector() -> rx.Component:
     return rx.vstack(
         rx.text("Chọn thời gian giao hàng", weight="bold", color="black"),
         rx.segmented_control.root(
-            rx.segmented_control.item("Hôm nay", value="Hôm nay", bg="#0090FF", cursor = "pointer"),
-            rx.segmented_control.item("Ngày mai", value="Ngày mai", bg="#0090FF", cursor = "pointer"),
+            rx.segmented_control.item(
+                "Hôm nay", value="Hôm nay", bg="#0090FF", cursor="pointer"
+            ),
+            rx.segmented_control.item(
+                "Ngày mai", value="Ngày mai", bg="#0090FF", cursor="pointer"
+            ),
             value=rx.cond(
                 State.CartState.selected_delivery_day == "hom_nay",
                 "Hôm nay",
@@ -70,7 +74,7 @@ def delivery_time_selector() -> rx.Component:
             spacing="3",
             margin_top="10px",
             width="100%",
-            cursor = "pointer"
+            cursor="pointer",
         ),
         align_items="start",
         width="100%",
@@ -92,7 +96,9 @@ def cart_with_items() -> rx.Component:
                 rx.text(it["name"], weight="bold", color="black"),
                 rx.link(
                     "Xóa",
-                    on_click=State.CartState.delete_item(it["cart_item_id"]),
+                    on_click=lambda: State.CartState.delete_item(
+                        it["cart_item_id"]
+                    ),  # SỬA LỖI
                     size="1",
                     color_scheme="red",
                     cursor="pointer",
@@ -104,14 +110,18 @@ def cart_with_items() -> rx.Component:
             rx.hstack(
                 rx.button(
                     "-",
-                    on_click=State.CartState.decrement_item(it["cart_item_id"]),
+                    on_click=lambda: State.CartState.decrement_item(
+                        it["cart_item_id"]
+                    ),  # SỬA LỖI
                     size="1",
                     cursor="pointer",
                 ),
                 rx.text(it["quantity"], margin_x="10px", weight="bold", color="black"),
                 rx.button(
                     "+",
-                    on_click=State.CartState.increment_item(it["cart_item_id"]),
+                    on_click=lambda: State.CartState.increment_item(
+                        it["cart_item_id"]
+                    ),  # SỬA LỖI
                     size="1",
                     cursor="pointer",
                 ),

@@ -11,14 +11,14 @@ CONNECTION_STRING = os.getenv("DATABASE_URL")
 class CartState(rx.State):
     items: list[dict] = []
     total: int = 0
-    
+
     # THÔNG TIN KHÁCH HÀNG
     user_full_name: str = ""
     user_phone: str = ""
     user_address: str = ""
-    
+
     is_loading: bool = False
-    
+
     # --- STATE CHO VIỆC CHỌN GIỜ GIAO HÀNG ---
     selected_delivery_day: str = "hom_nay"
     selected_delivery_slot: str = ""
@@ -34,7 +34,7 @@ class CartState(rx.State):
             {"value": "chieu", "label": "Chiều (Trước 16:00)"},
             {"value": "toi", "label": "Tối (Trước 20:00)"},
         ]
-        
+
         if self.selected_delivery_day == "ngay_mai":
             for opt in options:
                 opt["is_disabled"] = False
@@ -42,7 +42,7 @@ class CartState(rx.State):
 
         now = datetime.now()
         current_hour = now.hour
-        
+
         options[0]["is_disabled"] = current_hour >= 12
         options[1]["is_disabled"] = current_hour >= 16
         options[2]["is_disabled"] = current_hour >= 20
@@ -52,16 +52,21 @@ class CartState(rx.State):
     # --- SETTERS ---
     def set_delivery_day(self, day: str):
         self.selected_delivery_day = day
-        # SỬA LỖI: Truy cập computed var không cần ()
         current_options = self.valid_delivery_options
         if self.selected_delivery_slot:
-            slot_to_check = next((opt for opt in current_options if opt["value"] == self.selected_delivery_slot), None)
+            slot_to_check = next(
+                (
+                    opt
+                    for opt in current_options
+                    if opt["value"] == self.selected_delivery_slot
+                ),
+                None,
+            )
             if slot_to_check and slot_to_check["is_disabled"]:
                 self.selected_delivery_slot = ""
-    
+
     def set_delivery_slot(self, slot: str):
         self.selected_delivery_slot = slot
-
 
     async def _get_user_id(self) -> int | None:
         login_state = await self.get_state(LoginState)
@@ -85,17 +90,17 @@ class CartState(rx.State):
         try:
             with pyodbc.connect(CONNECTION_STRING) as conn:
                 cur = conn.cursor()
-                
+
                 cur.execute(
                     "SELECT FullName, PhoneNumber, Address FROM Users WHERE ID = ?",
-                    (user_id,)
+                    (user_id,),
                 )
                 user_row = cur.fetchone()
                 if user_row:
                     self.user_full_name = user_row.FullName or ""
                     self.user_phone = user_row.PhoneNumber or ""
                     self.user_address = user_row.Address or ""
-                
+
                 cur.execute(
                     """
                     SELECT ci.CartItemID, p.ID AS ProductID, p.Name, p.Price,
@@ -140,19 +145,19 @@ class CartState(rx.State):
         try:
             with pyodbc.connect(CONNECTION_STRING) as conn:
                 cur = conn.cursor()
-                
+
                 cart_id = await self._get_cart_id(conn, user_id)
                 if not cart_id:
                     cur.execute(
                         "INSERT INTO Carts (UserID) OUTPUT INSERTED.CartID VALUES (?)",
-                        (user_id,)
+                        (user_id,),
                     )
                     cart_id = cur.fetchone()[0]
 
                 for product_id, quantity_to_add in items:
                     cur.execute(
                         "SELECT Quantity FROM CartItems WHERE CartID = ? AND ProductID = ?",
-                        (cart_id, product_id)
+                        (cart_id, product_id),
                     )
                     row = cur.fetchone()
 
@@ -160,20 +165,20 @@ class CartState(rx.State):
                         new_quantity = row.Quantity + quantity_to_add
                         cur.execute(
                             "UPDATE CartItems SET Quantity = ? WHERE CartID = ? AND ProductID = ?",
-                            (new_quantity, cart_id, product_id)
+                            (new_quantity, cart_id, product_id),
                         )
                     else:
                         cur.execute(
                             "INSERT INTO CartItems (CartID, ProductID, Quantity) VALUES (?, ?, ?)",
-                            (cart_id, product_id, quantity_to_add)
+                            (cart_id, product_id, quantity_to_add),
                         )
-                
+
                 conn.commit()
         except Exception as e:
             print(f"Lỗi khi thêm nhiều sản phẩm vào giỏ: {e}")
             return rx.window_alert("Đã xảy ra lỗi khi thêm sản phẩm vào giỏ hàng.")
-        
-        return self.load_cart()
+
+        return type(self).load_cart
 
     async def increment_item(self, cart_item_id: int):
         user_id = await self._get_user_id()
@@ -193,7 +198,7 @@ class CartState(rx.State):
                 conn.commit()
         except Exception as e:
             print(f"increment_item error: {e}")
-        return self.load_cart()
+        return type(self).load_cart
 
     async def decrement_item(self, cart_item_id: int):
         user_id = await self._get_user_id()
@@ -210,8 +215,9 @@ class CartState(rx.State):
                     (cart_item_id, user_id),
                 )
                 row = cur.fetchone()
-                if not row: return
-                
+                if not row:
+                    return
+
                 if int(row.Quantity) <= 1:
                     cur.execute(
                         "DELETE ci FROM CartItems ci JOIN Carts c ON c.CartID = ci.CartID WHERE ci.CartItemID = ? AND c.UserID = ?",
@@ -225,7 +231,7 @@ class CartState(rx.State):
                 conn.commit()
         except Exception as e:
             print(f"decrement_item error: {e}")
-        return self.load_cart()
+        return type(self).load_cart
 
     async def delete_item(self, cart_item_id: int):
         user_id = await self._get_user_id()
@@ -241,7 +247,7 @@ class CartState(rx.State):
                 conn.commit()
         except Exception as e:
             print(f"delete_item error: {e}")
-        return self.load_cart()
+        return type(self).load_cart
 
     async def clear_cart(self):
         user_id = await self._get_user_id()
@@ -257,7 +263,7 @@ class CartState(rx.State):
                 conn.commit()
         except Exception as e:
             print(f"clear_cart error: {e}")
-        return self.load_cart()
+        return type(self).load_cart
 
     async def place_order(self):
         self.is_loading = True
@@ -268,10 +274,12 @@ class CartState(rx.State):
         if not self.items:
             self.is_loading = False
             return rx.window_alert("Giỏ hàng của bạn đang trống!")
-        
+
         if not self.user_full_name or not self.user_phone or not self.user_address:
             self.is_loading = False
-            return rx.window_alert("Vui lòng cập nhật đầy đủ Họ tên, SĐT và Địa chỉ trong hồ sơ!")
+            return rx.window_alert(
+                "Vui lòng cập nhật đầy đủ Họ tên, SĐT và Địa chỉ trong hồ sơ!"
+            )
 
         if not self.selected_delivery_slot:
             self.is_loading = False
@@ -279,15 +287,19 @@ class CartState(rx.State):
 
         try:
             today = datetime.now().date()
-            delivery_date = today if self.selected_delivery_day == "hom_nay" else today + timedelta(days=1)
-            
+            delivery_date = (
+                today
+                if self.selected_delivery_day == "hom_nay"
+                else today + timedelta(days=1)
+            )
+
             slot_times = {
                 "sang": time(12, 0),
                 "chieu": time(16, 0),
-                "toi": time(20, 0)
+                "toi": time(20, 0),
             }
             delivery_time = slot_times[self.selected_delivery_slot]
-            
+
             final_delivery_datetime = datetime.combine(delivery_date, delivery_time)
 
         except Exception as e:
@@ -296,7 +308,7 @@ class CartState(rx.State):
 
         try:
             with pyodbc.connect(CONNECTION_STRING) as conn:
-                cur = conn.cursor() 
+                cur = conn.cursor()
                 try:
                     sql_insert_order = """
                         INSERT INTO Orders (UserID, OrderDate, Status, RecipientName, RecipientPhone, ShippingAddress, DeliveryDate) 
@@ -304,14 +316,14 @@ class CartState(rx.State):
                         VALUES (?, GETDATE(), ?, ?, ?, ?, ?)
                     """
                     params = (
-                        user_id, 
+                        user_id,
                         "processing",
-                        self.user_full_name, 
-                        self.user_phone, 
+                        self.user_full_name,
+                        self.user_phone,
                         self.user_address,
-                        final_delivery_datetime
+                        final_delivery_datetime,
                     )
-                    
+
                     cur.execute(sql_insert_order, params)
                     order_id = cur.fetchone()[0]
 
@@ -323,16 +335,21 @@ class CartState(rx.State):
 
                     cart_id = await self._get_cart_id(conn, user_id)
                     if cart_id:
-                        cur.execute("DELETE FROM CartItems WHERE CartID = ?", (cart_id,))
-                    
+                        cur.execute(
+                            "DELETE FROM CartItems WHERE CartID = ?", (cart_id,)
+                        )
+
                     conn.commit()
-                    
+
                     self.items = []
                     self.total = 0
                     self.selected_delivery_day = "hom_nay"
                     self.selected_delivery_slot = ""
                     self.is_loading = False
-                    return [rx.window_alert("Đặt hàng thành công!"), rx.redirect("/")]
+                    return [
+                        rx.window_alert("Đặt hàng thành công!"),
+                        rx.redirect("/"),
+                    ]
                 except Exception as e:
                     conn.rollback()
                     self.is_loading = False
