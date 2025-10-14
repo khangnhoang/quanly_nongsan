@@ -1,5 +1,40 @@
 import reflex as rx
-from ...states.state import State 
+from ...states.state import State
+
+def sidebar_link(text: str, icon: str, hrefs: str | list[str]) -> rx.Component:
+    """
+    Một component link cho sidebar có thể thay đổi style khi được chọn.
+    hrefs có thể là một chuỗi đơn hoặc một danh sách các chuỗi.
+    """
+    # Xác định URL chính để điều hướng (luôn là phần tử đầu tiên nếu là list)
+    primary_href = hrefs[0] if isinstance(hrefs, list) else hrefs
+    
+    # Xây dựng điều kiện để xác định trạng thái active
+    is_active = rx.Var.create(False) # Tạo một biến điều kiện ban đầu
+    
+    routes_to_check = hrefs if isinstance(hrefs, list) else [hrefs]
+    for route in routes_to_check:
+        is_active |= (State.router.page.path == route)
+
+    return rx.link(
+        rx.box(
+            rx.hstack(
+                rx.icon(icon, color="orange"),
+                rx.text(
+                    text,
+                    color=rx.cond(is_active, "white", "black"),
+                    font_weight=rx.cond(is_active, "bold", "normal"),
+                ),
+                width="100%",
+                bg=rx.cond(is_active, "red", "transparent"),
+                padding="4px",
+                border_radius="4px",
+            ),
+            width="100%",
+        ),
+        href=primary_href, # Điều hướng đến URL chính
+        width="100%",
+    )
 
 
 def sidebar() -> rx.Component:
@@ -11,7 +46,7 @@ def sidebar() -> rx.Component:
         rx.image(
             src="/logo.png",
             max_width="40%",
-            height="auto",  # Sử dụng auto để giữ tỷ lệ ảnh
+            height="auto",
             border="2px solid none",
             boxShadow="0 0 10px rgba(255, 0, 0, 0.75)",
             marginTop="10%",
@@ -25,70 +60,29 @@ def sidebar() -> rx.Component:
                     spacing="2",
                     align="center",
                 ),
-                size="4",  # Chỉnh size cho phù hợp
+                size="4",
             ),
             rx.box(height="1px", bg="black", width="100%", marginTop="2px"),
-            rx.link(
-                rx.box(
-                rx.hstack(
-                    rx.icon("user-round-check", color="orange"),
-                    rx.text("Khai báo", color="white", font_weight="bold"),
-                    width="100%",
-                    bg="red",
-                    padding="4px",
-                    border_radius="4px",
-                ),
-                width="100%",
+            
+            # --- ÁP DỤNG LOGIC MỚI TẠI ĐÂY ---
+            
+            # Link "Khai báo" sẽ active với 1 trong 4 routes
+            sidebar_link(
+                "Khai báo", 
+                "user-round-check", 
+                ["/product_types", "/product_category", "/image_page", "/customer"]
             ),
-                href="/product_types",
-                color = "black",
-                width = "100%",
+            
+            # Link "Báo Cáo" sẽ active với 1 trong 2 routes
+            sidebar_link(
+                "Báo Cáo", 
+                "bar-chart", 
+                ["/report_order", "/delivery_report"]
             ),
-            rx.box(
-                rx.hstack(
-                    rx.icon("package", color="orange"),
-                    rx.text("Quản lí kho"),
-                    width="100%",
-                    bg="none",
-                    padding="4px",
-                    border_radius="4px",
-                ),
-            ),
-            rx.box(
-                rx.hstack(
-                    rx.icon("dollar-sign", color="orange"),
-                    rx.text("Bán hàng"),
-                    width="100%",
-                    bg="none",
-                    padding="4px",
-                    border_radius="4px",
-                )
-            ),
-            rx.box(
-                rx.hstack(
-                    rx.icon("bar-chart", color="orange"),
-                    rx.text("Báo Cáo"),
-                    width="100%",
-                    bg="none",
-                    padding="4px",
-                    border_radius="4px",
-                )
-            ),
-            rx.link(
-                rx.box(
-                rx.hstack(
-                    rx.icon("users", color="orange"),
-                    rx.text("Tài khoản"),
-                    width="100%",
-                    bg="none",
-                    padding="4px",
-                    border_radius="4px",
-                ),
-            ),
-                href="/change_password",
-                color = "black",
-                width = "100%",
-            ),
+            
+            # Link "Tài khoản" vẫn như cũ (chỉ có 1 route)
+            sidebar_link("Tài khoản", "key-round", "/change_password"),
+
             width="95%",
             spacing="2",
             border="3px solid #cac8c6",
@@ -97,9 +91,14 @@ def sidebar() -> rx.Component:
             padding="8px",
             text_align="left",
         ),
-        rx.spacer(),  # Đẩy nội dung xuống dưới cùng
+        rx.spacer(),
         rx.vstack(
-            rx.heading("Xin chào: ", State.LoginState.current_user["fullname"], size="5", text_align="left"),
+            rx.heading(
+                "Xin chào: ",
+                State.LoginState.current_user["fullname"],
+                size="5",
+                text_align="left",
+            ),
             rx.button(
                 "Đăng xuất",
                 bg="lightgray",
@@ -107,9 +106,8 @@ def sidebar() -> rx.Component:
                 border="1px solid",
                 cursor="pointer",
                 on_click=State.LoginState.handle_logout,
-                
             ),
-            marginTop="auto",  # Đẩy lên trên cùng của vstack này
+            marginTop="auto",
         ),
         width="25%",
         height="100vh",
@@ -117,6 +115,6 @@ def sidebar() -> rx.Component:
         bg="#f0f4f8",
         color="black",
         align="center",
-        position="sticky",  # Giữ sidebar cố định khi cuộn
+        position="sticky",
         top="0",
     )

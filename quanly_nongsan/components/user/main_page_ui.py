@@ -56,6 +56,7 @@ def add_to_cart_modal_content() -> rx.Component:
                     size="2",
                     type="number",
                     min=1,
+                    auto_focus=True
                 ),
                 rx.button(
                     "+",

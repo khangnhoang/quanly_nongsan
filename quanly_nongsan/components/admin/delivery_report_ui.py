@@ -1,185 +1,193 @@
-# delivery_report_ui.py
-
 import reflex as rx
 from ...states.state import State
 from .sidebar_ui import sidebar
-from ...states.admin.delivery_report_backend import DeliveryState 
-# --- HÀM HELPER CHO CÁC NÚT HÀNH ĐỘNG ---
-def select_for_edit(order: dict):
-    # Sử dụng DeliveryState
-    return DeliveryState.select_single_order_for_edit(order) 
+from ...states.admin.delivery_report_backend import DeliveryState
 
-def delete_single_order_by_id(order_id: int):
-    # Sử dụng DeliveryState
-    return DeliveryState.delete_order_by_id(order_id)
+
+def stat_card(title: str, value: rx.Var, color: str) -> rx.Component:
+    return rx.vstack(
+        rx.heading(value, size="7", color_scheme=color),
+        rx.text(title, size="3", color="black"),
+        padding="20px",
+        border="1px solid #eee",
+        border_radius="md",
+        bg="white",
+        align_items="center",
+        width="100%",
+    )
 
 
 def main_content():
-    # Lambda để kiểm tra một đơn hàng có được chọn hay không
-    is_selected = lambda order: (
-        DeliveryState.selected_order_ids.contains(order["id"])
-    )
-
-    # Thêm "Hành động" vào danh sách header
+    is_selected = lambda order: DeliveryState.selected_order_ids.contains(order["id"])
     HEADERS = [
-        "Mã ĐH", "Tên Khách", "SĐT Người Nhận", "Địa Chỉ Giao Hàng", 
-        "Ngày Đặt", "Ngày Giao", "Trạng Thái", "Ghi Chú", "Hành động"
+        "Mã ĐH",
+        "Tên Người Nhận",
+        "SĐT",
+        "Địa chỉ",
+        "Ngày Giao",
+        "Trạng Thái",
+        "Ghi Chú",
     ]
-    
-    # Header cho form sửa (không cần cột hành động)
-    EDIT_HEADERS = [
-        "Mã ĐH", "Tên Khách", "SĐT Người Nhận", "Địa Chỉ Giao Hàng", 
-        "Ngày Đặt", "Trạng Thái", "Ngày Giao", "Ghi Chú" # Thay đổi thứ tự để sửa
-    ]
-
-    # Các trạng thái mặc định cho Dropdown
-    STATUS_OPTIONS = ["Đang xử lý", "Đã xác nhận", "Đang giao hàng", "Đã giao hàng", "Đã hủy"]
 
     return rx.vstack(
-        # --- THANH MENU ĐIỀU HƯỚNG ---
         rx.center(
             rx.hstack(
-                # Thêm nút Báo cáo giao hàng
-                rx.button("Báo cáo giao hàng", bg="red", color="white", on_click=rx.redirect("/delivery_report")),
-                spacing="0", padding="12px"
+                rx.button("Khách hàng đã đặt", bg="whitesmoke", color="black", padding="12px", cursor="pointer", on_click=rx.redirect("/report_order")),
+                rx.button("Quản lý giao hàng", bg="red", color="white", padding="12px", cursor="pointer", on_click=rx.redirect("/delivery_report")),
+                spacing="0",
             ),
             width="100%", marginBottom="2%",
         ),
         
-        # --- BÁO CÁO GIAO HÀNG ---
-        rx.heading("Báo cáo giao hàng", size="7"),
+        rx.heading("Quản lý Giao hàng", size="7"),
         rx.divider(border_color="red"),
-
-        # --- TÌM KIẾM ---
-        rx.vstack(
-            rx.text("Gõ tìm kiếm và nhấn Enter", size="2"),
-            rx.input(
-                # Sử dụng DeliveryState
-                value=DeliveryState.search_query, on_change=DeliveryState.set_search_query,
-                on_key_down=DeliveryState.search_on_enter, width="100%", bg="#f1f4f9", color="black",
-                placeholder="Tìm theo Mã ĐH, Tên người nhận, SĐT, Địa chỉ, Trạng thái...",
-            ),
-            width="100%",
-        ),
-        rx.heading("Kết quả tìm kiếm", size="3"),
-
-        # --- NÚT XÓA NHIỀU MỤC ĐÃ CHỌN ---
         rx.hstack(
-            rx.button(
-                "Xóa các mục đã chọn", bg="red", color="white",
-                # Sử dụng DeliveryState
-                on_click=DeliveryState.delete_selected_orders, cursor="pointer",
-                is_disabled=DeliveryState.selected_order_ids.length() == 0
-            ),
-            justify="start", width="100%", margin_bottom="10px",
+            stat_card("Tổng Đơn Hàng", DeliveryState.total_orders, "blue"),
+            stat_card("Giao Hôm Nay", DeliveryState.delivered_today_count, "green"),
+            stat_card("Đơn Quá Hạn", DeliveryState.overdue_count, "red"),
+            spacing="6",
+            width="100%",
+            margin_y="20px",
         ),
-        
-        # --- BẢNG DỮ LIỆU ---
+        rx.input(
+            value=DeliveryState.search_query,
+            on_change=DeliveryState.set_search_query,
+            on_key_down=DeliveryState.search_on_enter,
+            placeholder="Tìm kiếm đơn hàng và nhấn Enter...",
+            width="100%",
+            margin_bottom="10px",
+            bg="whitesmoke",
+            color="black",
+            style={"input::placeholder": {"color": "#ccc"}},
+        ),
         rx.table.root(
             rx.table.header(
                 rx.table.row(
                     rx.table.column_header_cell(
-                        # Sử dụng DeliveryState
-                        rx.checkbox(checked=DeliveryState.all_selected, on_change=DeliveryState.select_all_orders),
-                        color="black", border="0.5px solid #C1C1C1", bg="#E4E6E7", width="5%"
+                        rx.text("Chọn"),
+                        color="black",
                     ),
-                    *[rx.table.column_header_cell(h, color="black", border="0.5px solid #C1C1C1", bg="#E4E6E7") for h in HEADERS]
+                    *[rx.table.column_header_cell(h, color="black") for h in HEADERS],
                 )
             ),
             rx.table.body(
-                # Sử dụng DeliveryState.orders
                 rx.foreach(
                     DeliveryState.orders,
                     lambda order: rx.table.row(
                         rx.table.cell(
                             rx.checkbox(
                                 checked=is_selected(order),
-                                on_change=lambda checked: DeliveryState.select_order(order, checked)
+                                on_change=lambda checked: DeliveryState.select_order(
+                                    order, checked
+                                ),
                             ),
-                            border="0.5px solid #C1C1C1", bg=rx.cond(is_selected(order), "#f0f8ff", "white")
+                            # Dòng này sẽ chặn sự kiện click lan ra ngoài hàng
+                            on_click=rx.stop_propagation,
                         ),
-                        rx.table.cell(order["id"], border="0.5px solid #C1C1C1", color="black"),
-                        rx.table.cell(order["recipient_name"], border="0.5px solid #C1C1C1", color="black"),
-                        rx.table.cell(order["recipient_phone"], border="0.5px solid #C1C1C1", color="black"),
-                        # Có thể hiển thị nhiều hơn: rx.table.cell(order["shipping_address"], ...)
-                        rx.table.cell(order["shipping_address"], border="0.5px solid #C1C1C1", color="black", max_width="200px", overflow="hidden", text_overflow="ellipsis"),
-                        rx.table.cell(order["order_date"], border="0.5px solid #C1C1C1", color="black"),
-                        rx.table.cell(order["delivery_date"], border="0.5px solid #C1C1C1", color="black"),
-                        rx.table.cell(order["status"], border="0.5px solid #C1C1C1", color="black"),
-                        rx.table.cell(order["notes"], border="0.5px solid #C1C1C1", color="black", max_width="150px", overflow="hidden", text_overflow="ellipsis"),
+                        rx.table.cell(order["id"], color="black"),
+                        rx.table.cell(order["recipient_name"], color="black"),
+                        rx.table.cell(order["recipient_phone"], color="black"),
                         rx.table.cell(
-                            rx.hstack(
-                                rx.button(rx.icon("trash-2"), on_click=delete_single_order_by_id(order["id"]), size="1", color_scheme="red"),
-                                spacing="2", justify="center"
-                            ),
-                            border="0.5px solid #C1C1C1", text_align="center"
+                            order["shipping_address"],
+                            max_width="250px",
+                            text_overflow="ellipsis",
+                            overflow="hidden",
+                            white_space="nowrap",
+                            color="black",
                         ),
-                        key=order["id"],
+                        rx.table.cell(order["delivery_date_formatted"], color="black"),
+                        rx.table.cell(
+                            rx.badge(
+                                order["status_text"], color_scheme=order["status_color"]
+                            )
+                        ),
+                        rx.table.cell(
+                            order["notes"],
+                            max_width="200px",
+                            text_overflow="ellipsis",
+                            overflow="hidden",
+                            white_space="nowrap",
+                            color="black",
+                        ),
+                        on_click=lambda: DeliveryState.select_single_order_for_edit(
+                            order
+                        ),
+                        cursor="pointer",
+                        _hover={"background_color": "#f8f9fa"},
+                        bg=rx.cond(is_selected(order), "#f0f8ff", "transparent"),
                     ),
                 )
             ),
+            variant="surface",
             width="100%",
         ),
-
-        # --- KHUNG DỮ LIỆU SỬA (CHỈ HIỂN THỊ KHI is_only_one_selected LÀ TRUE) ---
         rx.cond(
             DeliveryState.is_only_one_selected,
             rx.vstack(
-                rx.heading("Dữ liệu đã chọn", size="5"),
-                rx.table.root(
-                    rx.table.header(
-                        rx.table.row(*[rx.table.column_header_cell(h, color="black", border="0.5px solid #C1C1C1", bg="#E4E6E7") for h in EDIT_HEADERS])
+                rx.heading(
+                    f"Chỉnh sửa đơn hàng #{DeliveryState.order_to_edit.get('id', '')}",
+                    size="5",
+                ),
+                rx.cond(
+                    DeliveryState.is_editing_disabled,
+                    rx.callout(
+                        "Đã quá hạn giao, không thể chỉnh sửa.",
+                        icon="triangle-alert",
+                        color_scheme="red",
+                        variant="soft",
+                        width="100%",
                     ),
-                    rx.table.body(
-                        rx.table.row(
-                            # Các ô chỉ hiển thị (thông tin người nhận/đặt)
-                            rx.table.cell(DeliveryState.order_to_edit.get("id", ""), border="0.5px solid #C1C1C1", color="black"),
-                            rx.table.cell(DeliveryState.order_to_edit.get("recipient_name", ""), border="0.5px solid #C1C1C1", color="black"),
-                            rx.table.cell(DeliveryState.order_to_edit.get("recipient_phone", ""), border="0.5px solid #C1C1C1", color="black"),
-                            rx.table.cell(DeliveryState.order_to_edit.get("shipping_address", ""), border="0.5px solid #C1C1C1", color="black"),
-                            rx.table.cell(DeliveryState.order_to_edit.get("order_date", ""), border="0.5px solid #C1C1C1", color="black"),
-                            
-                            # Ô chỉnh sửa Trạng thái (Dropdown)
-                            rx.table.cell(
-                                rx.select(
-                                    STATUS_OPTIONS,
-                                    value=DeliveryState.edited_status,
-                                    on_change=DeliveryState.set_edited_status,
-                                    placeholder="Chọn Trạng Thái",
-                                ),
-                                border="0.5px solid #C1C1C1"
-                            ),
-                            # Ô chỉnh sửa Ngày giao hàng (Input date)
-                            rx.table.cell(
-                                rx.input(
-                                    value=DeliveryState.edited_delivery_date, 
-                                    on_change=DeliveryState.set_edited_delivery_date, 
-                                    bg="white", color="black", type="date"
-                                ), 
-                                border="0.5px solid #C1C1C1"
-                            ),
-                            # Ô chỉnh sửa Ghi chú
-                            rx.table.cell(
-                                rx.input(
-                                    value=DeliveryState.edited_notes, 
-                                    on_change=DeliveryState.set_edited_notes, 
-                                    bg="white", color="black"
-                                ), 
-                                border="0.5px solid #C1C1C1"
-                            ),
-                        )
-                    ),
-                    width="100%",
                 ),
                 rx.hstack(
-                    # Sử dụng DeliveryState
-                    rx.button("Cập nhật thông tin", on_click=DeliveryState.update_order, cursor="pointer"),
-                    spacing="4", marginTop="10px",
+                    rx.select.root(
+                        rx.select.trigger(placeholder="Chọn Trạng Thái"),
+                        rx.select.content(
+                            rx.foreach(
+                                DeliveryState.status_options,
+                                lambda option: rx.select.item(
+                                    option[0], value=option[1]
+                                ),
+                            )
+                        ),
+                        value=DeliveryState.edited_status,
+                        on_change=DeliveryState.set_edited_status,
+                        disabled=DeliveryState.is_editing_disabled,
+                    ),
+                    rx.input(
+                        value=DeliveryState.edited_delivery_date,
+                        on_change=DeliveryState.set_edited_delivery_date,
+                        type="date",
+                        disabled=DeliveryState.is_editing_disabled,
+                    ),
+                    rx.input(
+                        value=DeliveryState.edited_notes,
+                        on_change=DeliveryState.set_edited_notes,
+                        placeholder="Thêm ghi chú...",
+                        disabled=DeliveryState.is_editing_disabled,
+                        style={"input::placeholder": {"color": "white"}},
+                    ),
+                    rx.button(
+                        "Cập nhật",
+                        on_click=DeliveryState.update_order,
+                        disabled=DeliveryState.is_editing_disabled,
+                    ),
+                    spacing="4",
+                    width="100%",
                 ),
-                width="100%", align="center", padding="15px", border="1px solid #ddd", border_radius="8px", marginTop="20px", bg="#fafafa",
+                width="100%",
+                padding="15px",
+                border="1px solid #ddd",
+                border_radius="8px",
+                marginTop="20px",
+                bg="#fafafa",
             ),
         ),
-        width="100%", height="100%", bg="white", color="black", padding="20px", overflow_y="auto", align_items="start",
+        width="100%",
+        bg="white",
+        padding="20px",
+        height="100%",
+        overflow_y="auto",
+        color="black",
     )
 
 
@@ -187,7 +195,8 @@ def index() -> rx.Component:
     return rx.hstack(
         sidebar(),
         main_content(),
-        # Tải danh sách đơn hàng khi mount
-        on_mount=[State.LoginState.try_auto_login, DeliveryState.load_orders],
-        gap="0", width="100%", height="100vh",
+        on_mount=[State.LoginState.try_auto_login, DeliveryState.on_load],
+        gap="0",
+        width="100%",
+        height="100vh",
     )

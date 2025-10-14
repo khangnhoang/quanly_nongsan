@@ -60,7 +60,7 @@ def header() -> rx.Component:
                             spacing="2",
                             align_items="center",
                         ),
-                        href="/customer",
+                        href="/change_password",
                         color="white",
                         _hover={"opacity": 0.8},
                         transition="opacity 0.2s ease",

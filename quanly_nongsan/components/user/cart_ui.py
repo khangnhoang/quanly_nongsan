@@ -14,7 +14,7 @@ def cart_no_item() -> rx.Component:
             ),
             rx.image(src="/cart.jpg", width="300px", margin_y="20px"),
             rx.link(
-                rx.button("Tiếp tục mua hàng", color_scheme="grass", size="3"),
+                rx.button("Tiếp tục mua hàng", color_scheme="grass", size="3", cursor = "pointer"),
                 href="/",
             ),
             align_items="center",

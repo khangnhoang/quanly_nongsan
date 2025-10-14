@@ -6,6 +6,7 @@ from .admin.product_types_backend import State as productState
 from .admin.product_category_backend import State as productState2
 from .admin.customer_backend import UserState as UserState
 from .admin.images_backend import ImageState as ImageState
+from .admin.report_order_backend import ReportOrderState
 
 
 class State(rx.State):
@@ -16,3 +17,4 @@ class State(rx.State):
     productState2 = productState2
     UserState = UserState
     ImageState = ImageState
+    ReportOrderState = ReportOrderState
