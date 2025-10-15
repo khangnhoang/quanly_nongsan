@@ -348,7 +348,7 @@ class CartState(rx.State):
                     self.is_loading = False
                     return [
                         rx.window_alert("Đặt hàng thành công!"),
-                        rx.redirect("/"),
+                        rx.redirect("/main_page"),
                     ]
                 except Exception as e:
                     conn.rollback()
