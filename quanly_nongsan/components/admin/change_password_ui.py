@@ -1,5 +1,5 @@
 import reflex as rx
-from ..states.state import State
+from ...states.state import State
 from .sidebar_ui import sidebar
 
 
@@ -7,8 +7,26 @@ def main_content() -> rx.Component:
     return rx.center(
         rx.vstack(
             rx.center(
-                rx.button("Password", bg="red", color="white", cursor="pointer"),
+                # Bọc các nút trên cùng trong hstack để xếp ngang
+                rx.hstack(
+                    rx.button("Password", bg="red", color="white", cursor="pointer"),
+
+                    # --- THÊM NÚT "QUAY LẠI" CÓ ĐIỀU KIỆN TẠI ĐÂY ---
+                    rx.cond(
+                        State.LoginState.current_user["role"] == "user",
+                        rx.button(
+                            "Quay lại",
+                            on_click=rx.redirect("/main_page"),
+                            bg="gray",
+                            color="white",
+                            cursor="pointer",
+                        ),
+                    ),
+                    spacing="0",
+                ),
                 width="100%",
+                justify_content="center", # Căn giữa các nút
+                padding_bottom="10px",
             ),
             rx.vstack(
                 rx.heading(
@@ -64,4 +82,14 @@ def main_content() -> rx.Component:
 
 
 def index() -> rx.Component:
-    return rx.hstack(sidebar(), main_content(), gap="0", on_mount=State.LoginState.try_auto_login)
+    return rx.hstack(
+        # Logic ẩn sidebar cho user vẫn được giữ nguyên
+        rx.cond(
+            State.LoginState.current_user["role"] != "user",
+            sidebar(),
+            rx.fragment(),
+        ),
+        main_content(),
+        gap="0",
+        on_mount=State.LoginState.try_auto_login
+    )
